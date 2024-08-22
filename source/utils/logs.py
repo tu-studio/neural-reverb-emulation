@@ -16,8 +16,10 @@ from typing import Any, Dict, Optional, Union
 from torch.utils.tensorboard import SummaryWriter
 from torch.utils.tensorboard.summary import hparams
 
-from source.utils import config
-
+if __name__ == "__main__":
+    import config
+else:
+    from utils import config
 
 class CustomSummaryWriter(SummaryWriter):
     """
