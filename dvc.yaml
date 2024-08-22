@@ -1,44 +1,68 @@
 stages:
-  preprocess:
-    cmd: python3 -m source.preprocess
-    deps:
-    - source/preprocess.py
-    - data/raw/
-    params:
-    - general.input_size
-    - preprocess.input_file
-    - preprocess.target_file
-    - preprocess.test_split
-    outs:
-    - data/processed/
+  # preprocess:
+  #   cmd: python source/preprocess.py
+  #   deps:
+  #   - source/preprocess.py
+  #   - source/network/dataset.py
+  #   - data/raw/
+  #   params:
+  #   - preprocess.input_directory
+  #   - preprocess.dry_output_directory
+  #   - preprocess.short_output_directory
+  #   - preprocess.wet_output_directory
+  #   - preprocess.board_chunk_size
+  #   - preprocess.sliding_mean_length
+  #   - preprocess.noise_duration
+  #   - preprocess.num_noises
+  #   - preprocess.plate_reverb_path
+  #   - preprocess.model_batch_size
+  #   - train.input_size
+  #   - general.sample_rate
+  #   outs:
+  #   - data/processed/
   train:
-    cmd: python3 -m source.train
+    cmd: python3 source/train.py
     deps:
     - source/train.py
-    - source/model.py
+    - source/network/
+    - source/network/dataset.py
+    - source/network/metrics.py
+    - source/network/training.py
+    - source/network/evaluate.py
+    - source/network/ravepqmf.py
     - data/processed/
     params:
-    - general.input_size
     - general.random_seed
-    - model.conv1d_strides
-    - model.conv1d_filters
-    - model.hidden_units
-    - train.batch_size
-    - train.learning_rate
-    - train.epochs
-    - train.device_request
-    outs:
-    - models/checkpoints/
-  export:
-    cmd: python3 -m source.export
-    deps:
-    - source/export.py
-    - models/checkpoints/
-    params:
+    - general.sample_rate
     - general.input_size
-    outs:
-    - models/exports/
+    - train.input_file
+    - train.name
+    - train.device_request
+    - train.n_inputs
+    - train.n_bands
+    - train.latent_dim
+    - train.epochs
+    - train.batch_size
+    - train.kernel_size
+    - train.n_blocks
+    - train.dilation_growth
+    - train.n_channels
+    - train.lr
+    - train.use_kl
+  #   outs:
+  #   - model/checkpoints/
+  # export:
+  #   cmd: python3 source/export.py
+  #   deps:
+  #   - source/export.py
+  #   - model/checkpoints/
+  #   params:
+  #   - general.input_size
+  #   - train.train_mode
+  #   outs:
+  #   - model/exports/
   save_logs:
-    cmd: python3 -m source.utils.logs
+    cmd: python3 source/utils/logs.py
     outs:
-    - exp_logs/
+    - exp_logs/slurm
+    - exp_logs/tensorboard
