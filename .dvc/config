@@ -1,8 +1,8 @@
 [core]
-    remote = myremote
+    remote = marckh
 [cache]
     shared = group
     type = symlink
-['remote "myremote"']
-    url = webdavs://tubcloud.tu-berlin.de/remote.php/dav/files/cf531c5e-2043-103b-8745-111da40a61ee/dvcR
+['remote "marckh"']
+    url = ssh://chef@marckh.ak.tu-berlin.de:/home/chef/Data/neural-reverb-emulation
     timeout = 600
