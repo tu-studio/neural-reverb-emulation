@@ -91,6 +91,19 @@ def main():
     model_params += list(decoder.parameters())
     optimizer = torch.optim.Adam(model_params, lr, (0.5, 0.9))
 
+        # milestones
+    milestone_percentages = [0.1, 0.2, 0.3, 0.4, 0.95]
+
+    # Convert percentages to iteration numbers
+    milestones = [int(n_epochs * p) for p in milestone_percentages]
+
+    scheduler = torch.optim.lr_scheduler.MultiStepLR(
+        optimizer,
+        milestones,
+        gamma=0.1,
+        verbose=False,
+    )
+
     # Load the dataset
     full_dataset = AudioDataset(input_file)
 
@@ -130,6 +143,7 @@ def main():
           val_loader, 
           criterion, 
           optimizer, 
+          scheduler,
           tensorboard_writer=writer, 
           num_epochs=n_epochs, 
           device=device,

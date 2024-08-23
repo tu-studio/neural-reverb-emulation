@@ -6,7 +6,7 @@ from network.ravepqmf import PQMF,  center_pad_next_pow_2
 from utils import config
 import os
 
-def train(encoder, decoder, train_loader, val_loader, criterion, optimizer, tensorboard_writer, num_epochs=25, device='cpu', n_bands=64, use_kl=False, sample_rate=44100):
+def train(encoder, decoder, train_loader, val_loader, criterion, optimizer, scheduler, tensorboard_writer, num_epochs=25, device='cpu', n_bands=64, use_kl=False, sample_rate=44100):
     encoder.to(device)
     decoder.to(device)
 
@@ -96,6 +96,7 @@ def train(encoder, decoder, train_loader, val_loader, criterion, optimizer, tens
             loss.backward()
 
         optimizer.step()
+        scheduler.step()
 
         train_avg_epoch_loss = train_epoch_loss / len(train_loader)
         train_avg_epoch_loss_criterion = train_epoch_criterion / len(train_loader)  
