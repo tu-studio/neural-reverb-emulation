@@ -1,0 +1,71 @@
+schema: '2.0'
+stages:
+  train:
+    cmd: python3 source/train.py
+    deps:
+    - path: data/processed/
+      hash: md5
+      md5: 1bd94f9ed9b25db8a46025bfdd488e8d.dir
+      size: 740457095
+      nfiles: 3
+    - path: source/network/
+      hash: md5
+      md5: 36704cd1ae922652557a42ca99677059.dir
+      size: 66922
+      nfiles: 14
+    - path: source/network/dataset.py
+      hash: md5
+      md5: 6a33e657139e21b977f4d2deb79bf1e4
+      size: 4231
+    - path: source/network/evaluate.py
+      hash: md5
+      md5: 867e6d1d22a938975b96000f4df56c86
+      size: 4211
+    - path: source/network/metrics.py
+      hash: md5
+      md5: edf8322a9643f164e7382b8a38ef00ae
+      size: 1162
+    - path: source/network/ravepqmf.py
+      hash: md5
+      md5: ff004d5afed02958b85ef7f204a0545f
+      size: 6965
+    - path: source/network/training.py
+      hash: md5
+      md5: 01e3c8e6d0b406543f92b58963164b2e
+      size: 8313
+    - path: source/train.py
+      hash: md5
+      md5: 28a32853623b84e901d6196ec22099a9
+      size: 5220
+    params:
+      params.yaml:
+        general.input_size: 524288
+        general.random_seed: 55
+        general.sample_rate: 44100
+        train.batch_size: 2
+        train.device_request: cuda
+        train.dilation_growth: 10
+        train.epochs: 1
+        train.input_file: data/processed/preprocessed_data.pt
+        train.kernel_size: 32
+        train.latent_dim: 128
+        train.lr: 1e-05
+        train.n_bands: 16
+        train.n_blocks: 1
+        train.n_channels: 32
+        train.n_inputs: 1
+        train.name: model
+        train.use_kl: false
+  save_logs:
+    cmd: python3 source/utils/logs.py
+    outs:
+    - path: exp_logs/slurm
+      hash: md5
+      md5: b7d81b0550346a2cc5787627f161a7f5.dir
+      size: 40372
+      nfiles: 9
+    - path: exp_logs/tensorboard
+      hash: md5
+      md5: 9a0ce64a33a2f97c930f13981cdc73d4.dir
+      size: 0
+      nfiles: 1

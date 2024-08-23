@@ -6,6 +6,7 @@
 
 # Description: This script runs an experiment with DVC within a temporary directory copy and pushes the results to the DVC and Git remote.
 
+
 # Set environment variables defined in global.env
 export $(grep -v '^#' global.env | xargs)
 
@@ -56,9 +57,9 @@ echo "Setting DVC cache directory..." &&
 dvc cache dir $DEFAULT_DIR/.dvc/cache &&
 
 # Pull the data from the DVC remote repository
-if [ -f "data/raw.dvc" ]; then
+if [ -f "data/processed.dvc" ]; then
     echo "Pulling data with DVC..." 
-    dvc pull data/raw;
+    dvc pull data/processed;
 fi &&
 
 # Run the experiment with passed parameters. Runs with the default parameters if none are passed.
