@@ -9,6 +9,7 @@ from network.dataset import AudioDataset
 from network.metrics import spectral_distance
 from utils import logs, config
 from pathlib import Path
+import math
 
 def main():
     # Load the hyperparameters from the params yaml file into a Dictionary
@@ -59,7 +60,7 @@ def main():
         latent_dim=latent_dim,
         use_kl=use_kl)
     
-    random_input = torch.randn(1, n_bands, input_size/n_bands)
+    random_input = torch.randn(1, n_bands, int(2**math.ceil(math.log2(input_size))/n_bands))
     random_skips = []
     x = random_input
     for block in encoder.blocks:
