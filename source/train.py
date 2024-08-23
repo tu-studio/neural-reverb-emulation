@@ -124,10 +124,29 @@ def main():
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
     # Train the model
-    train(encoder, decoder, train_loader, val_loader, criterion, optimizer, tensorboard_writer=writer, num_epochs=n_epochs, device=device, n_bands=n_bands, use_kl=use_kl, sample_rate=sample_rate)
+    train(encoder, 
+          decoder, 
+          train_loader, 
+          val_loader, 
+          criterion, 
+          optimizer, 
+          tensorboard_writer=writer, 
+          num_epochs=n_epochs, 
+          device=device,
+          n_bands=n_bands, 
+          use_kl=use_kl, 
+          sample_rate=sample_rate)
 
     # Evaluate the model
-    evaluate(encoder, decoder, test_loader, criterion, writer, device, n_bands, use_kl, sample_rate)
+    evaluate(encoder, 
+             decoder, 
+             test_loader,
+             criterion, 
+             writer, 
+             device, 
+             n_bands, 
+             use_kl, 
+             sample_rate)
 
     writer.close()
 
