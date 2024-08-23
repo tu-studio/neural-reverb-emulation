@@ -59,7 +59,7 @@ def main():
         latent_dim=latent_dim,
         use_kl=use_kl)
     
-    random_input = torch.randn(1, n_bands, input_size)
+    random_input = torch.randn(1, n_bands, input_size/n_bands)
     random_skips = []
     x = random_input
     for block in encoder.blocks:
