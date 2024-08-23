@@ -92,7 +92,7 @@ def main():
     optimizer = torch.optim.Adam(model_params, lr, (0.5, 0.9))
 
         # milestones
-    milestone_percentages = [0.1, 0.2, 0.3, 0.4, 0.95]
+    milestone_percentages = [0.5, 0.8, 0.95]
 
     # Convert percentages to iteration numbers
     milestones = [int(n_epochs * p) for p in milestone_percentages]
