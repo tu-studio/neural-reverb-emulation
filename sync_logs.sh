@@ -4,7 +4,9 @@
 # This file is licensed under the Apache License, Version 2.0.
 # See the LICENSE file in the root of this project for details.
 
-export $(grep -v '^#' global.env | xargs)
+set -o allexport
+source global.env
+set +o allexport
 
 while true; do
     # Run the rsync command

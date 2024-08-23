@@ -12,8 +12,8 @@
 
 ## Pipeline specific
 
-- Solve docker ownership issue
 - Delete the .gitignore in data/raw
 - delete init.py
 - why source use if else
 - create logs folder on ssh host
+- don't need to install torch?
