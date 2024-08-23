@@ -79,8 +79,8 @@ def main():
     torchinfo.summary(decoder, input_data=[x, random_skips], device=device)
 
     # Add the model graphs to the tensorboard logs
-    writer.add_graph(encoder, random_input)
-    writer.add_graph(decoder, [x, random_skips])
+    writer.add_graph(encoder, random_input.to(device))
+    writer.add_graph(decoder, [x.to(device), random_skips.to(device)])
 
     # setup loss function, optimizer, and scheduler
     criterion = spectral_distance
