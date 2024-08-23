@@ -30,6 +30,9 @@ def train(encoder, decoder, train_loader, val_loader, criterion, optimizer, tens
 
         for batch, (dry_audio, wet_audio) in enumerate(train_loader):
 
+            dry_audio = dry_audio.to(device)
+            wet_audio = wet_audio.to(device)
+
             # print(f"Dry audio shape: {dry_audio.shape}")
             # print(f"Wet audio shape: {wet_audio.shape}")
 
