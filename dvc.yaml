@@ -28,7 +28,7 @@ stages:
     - source/network/dataset.py
     - source/network/metrics.py
     - source/network/training.py
-    - source/network/evaluate.py
+    - source/network/testing.py
     - source/network/ravepqmf.py
     - data/processed/
     params:

@@ -3,7 +3,7 @@ from network.ravepqmf import PQMF, center_pad_next_pow_2
 from utils import config
 import os
 
-def evaluate(encoder, decoder, test_loader, criterion, tensorboard_writer, device='cpu', n_bands=64, use_kl=False, sample_rate=44100):
+def test(encoder, decoder, test_loader, criterion, tensorboard_writer, device='cpu', n_bands=64, use_kl=False, sample_rate=44100):
     encoder.to(device)
     decoder.to(device)
     

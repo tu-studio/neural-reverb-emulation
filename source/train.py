@@ -4,7 +4,7 @@ from torch.utils.data import  random_split, DataLoader
 from network.encoder import EncoderTCN
 from network.decoder import DecoderTCN
 from network.training import train
-from network.evaluate import evaluate
+from network.testing import test
 from network.dataset import AudioDataset
 from network.metrics import spectral_distance
 from utils import logs, config
@@ -152,15 +152,15 @@ def main():
           sample_rate=sample_rate)
 
     # Evaluate the model
-    evaluate(encoder, 
-             decoder, 
-             test_loader,
-             criterion, 
-             writer, 
-             device, 
-             n_bands, 
-             use_kl, 
-             sample_rate)
+    test(encoder, 
+         decoder, 
+         test_loader,
+         criterion, 
+         writer, 
+         device, 
+         n_bands, 
+         use_kl, 
+         sample_rate)
 
     writer.close()
 
