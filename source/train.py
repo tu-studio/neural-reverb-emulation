@@ -30,6 +30,8 @@ def main():
     random_seed = params["general"]["random_seed"]
     input_file = params["train"]["input_file"]
     input_size = params["general"]["input_size"]
+    scheduler_rate = params["train"]["scheduler_rate"]
+    scheduler_milestones = params["train"]["scheduler_milestones"] 
 
     # Create a SummaryWriter object to write the tensorboard logs
     tensorboard_path = logs.return_tensorboard_path()
@@ -91,16 +93,13 @@ def main():
     model_params += list(decoder.parameters())
     optimizer = torch.optim.Adam(model_params, lr, (0.5, 0.9))
 
-        # milestones
-    milestone_percentages = [0.5, 0.8, 0.95]
-
     # Convert percentages to iteration numbers
-    milestones = [int(n_epochs * p) for p in milestone_percentages]
+    milestones = [int(n_epochs * p) for p in scheduler_milestones]
 
     scheduler = torch.optim.lr_scheduler.MultiStepLR(
         optimizer,
         milestones,
-        gamma=0.1,
+        gamma=scheduler_rate,
         verbose=False,
     )
 

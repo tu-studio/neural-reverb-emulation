@@ -16,6 +16,8 @@ general:
 train:
   input_file: data/processed/preprocessed_data.pt
   name: model
+  scheduler_rate: 0.1
+  scheduler_milestones: [0.5, 0.8, 0.95]
   device_request: 'cuda'
   n_inputs: 1
   n_bands: 16
