@@ -31,7 +31,6 @@ def main():
     input_file = params["train"]["input_file"]
     input_size = params["general"]["input_size"]
     scheduler_rate = params["train"]["scheduler_rate"]
-    scheduler_milestones = params["train"]["scheduler_milestones"] 
 
     # Create a SummaryWriter object to write the tensorboard logs
     tensorboard_path = logs.return_tensorboard_path()
@@ -92,6 +91,8 @@ def main():
     model_params = list(encoder.parameters())
     model_params += list(decoder.parameters())
     optimizer = torch.optim.Adam(model_params, lr, (0.5, 0.9))
+
+    scheduler_milestones = [0.5,0.8,0.95]
 
     # Convert percentages to iteration numbers
     milestones = [int(n_epochs * p) for p in scheduler_milestones]
