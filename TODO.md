@@ -7,7 +7,7 @@
 - Rename and split training loop and evaluation loop
 - Evaluate loop should also log values e.g loss, accuracy, etc.
 - Save models after training
-- Implement training progress line
+- Implement training progress line --> Done
 - Add more weights to the skip connections
 - put the params of the scheduler iinto params.yaml --> Done
 - print the graph

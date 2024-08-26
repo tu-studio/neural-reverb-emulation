@@ -9,24 +9,8 @@ from utils import config
 # Load the hyperparameters from the params yaml file into a Dictionary
 params = config.Params('params.yaml')
 
-# Configuration
-CONFIG = {
-    'PLATE_REVERB_PATH': params["preprocess"]["plate_reverb_path"],
-    'SAMPLE_RATE': params["general"]["sample_rate"],
-    'BOARD_CHUNK_SIZE': params["preprocess"]["board_chunk_size"],
-    'SLIDING_MEAN_LENGTH': params["preprocess"]["sliding_mean_length"],
-    'NOISE_DURATION': params["preprocess"]["noise_duration"],
-    'NUM_NOISES': params["preprocess"]["num_noises"],
-    'MODEL_INPUT_SIZE': params["preprocess"]["input_size"],
-    'MODEL_BATCH_SIZE': params["preprocess"]["model_batch_size"],
-    'INPUT_DIRECTORY': params["preprocess"]["input_directory"],
-    'DRY_OUTPUT_DIRECTORY': params["preprocess"]["dry_output_directory"],
-    'SHORT_OUTPUT_DIRECTORY': params["preprocess"]["short_output_directory"],
-    'WET_OUTPUT_DIRECTORY': params["preprocess"]["wet_output_directory"]
-}
-
 def load_reverb():
-    plate_reverb = load_plugin(CONFIG['PLATE_REVERB_PATH'])
+    plate_reverb = load_plugin(params["preprocess"]["plate_reverb_path"])
     plate_reverb.blend_dry_wet = 1
     return Pedalboard([plate_reverb])
 
@@ -92,19 +76,19 @@ def process_audio_with_reverb(audio, board, sample_rate, chunk_size):
 
 def calculate_max_tail_length(board):
     silences = []
-    for _ in range(CONFIG['NUM_NOISES']):
-        noise = np.random.normal(-1, 1, int(CONFIG['NOISE_DURATION'] * CONFIG['SAMPLE_RATE']))
-        silence = np.zeros((int(CONFIG['NOISE_DURATION'] * CONFIG['SAMPLE_RATE'])))
+    for _ in range(params["preprocess"]["num_noises"]):
+        noise = np.random.normal(-1, 1, int(params["preprocess"]["noise_duration"] * params["general"]["sample_rate"]))
+        silence = np.zeros((int(params["preprocess"]["noise_duration"] * params["general"]["sample_rate"])))
         audio = np.concatenate((noise, silence))
-        effected_audio = process_audio_with_reverb(audio, board, CONFIG['SAMPLE_RATE'], CONFIG['BOARD_CHUNK_SIZE'])
+        effected_audio = process_audio_with_reverb(audio, board, params["general"]["sample_rate"], params["preprocess"]["board_chunk_size"])
         
         i = 0
         while i < np.shape(effected_audio)[-1]:
-            chunk = effected_audio[..., i:i + CONFIG['SLIDING_MEAN_LENGTH']]
-            if np.mean(abs(chunk)) < 1e-5 and i > CONFIG['SAMPLE_RATE'] * CONFIG['NOISE_DURATION']:
+            chunk = effected_audio[..., i:i + params["preprocess"]["sliding_mean_length"]]
+            if np.mean(abs(chunk)) < 1e-5 and i > params["general"]["sample_rate"] * params["preprocess"]["noise_duration"]:
                 break
             i += 1
-        silences.append(i - CONFIG['SAMPLE_RATE'] * CONFIG['NOISE_DURATION'])
+        silences.append(i - params["general"]["sample_rate"] * params["preprocess"]["noise_duration"])
     max_tail = np.max(silences)
 
     return max_tail
@@ -256,34 +240,35 @@ def save_data_to_pt():
     AudioDataset.save_to_pt(dry_audio_files, wet_audio_files, 'data/processed/preprocessed_data.pt')
 
 def main():
-
     board = load_reverb()
 
     # 0. Calculate max tail length
     max_tail_length = calculate_max_tail_length(board)
-    # max_tail_length = 151232
     print(f"Max tail length: {max_tail_length}")
 
     # 1. Define Chunk size
-    if CONFIG['MODEL_INPUT_SIZE'] < max_tail_length:
+    if params["preprocess"]["input_size"] < max_tail_length:
         raise ValueError("Model input size must be greater or equal to the max tail length")
 
-    model_chunk_size = CONFIG['MODEL_INPUT_SIZE']
+    model_chunk_size = params["preprocess"]["input_size"]
    
     # 2. Truncate data to the model and 3. apply zero padding
-    process_files(CONFIG['INPUT_DIRECTORY'], max_tail_length, model_chunk_size, CONFIG['DRY_OUTPUT_DIRECTORY'], CONFIG['SHORT_OUTPUT_DIRECTORY'])
+    process_files(params["preprocess"]["input_directory"], max_tail_length, model_chunk_size, 
+                  params["preprocess"]["dry_output_directory"], params["preprocess"]["short_output_directory"])
     
     # 5. Agglomerate short segments
-    agglomerate_short_segments(CONFIG['SHORT_OUTPUT_DIRECTORY'], CONFIG['DRY_OUTPUT_DIRECTORY'], model_chunk_size)
+    agglomerate_short_segments(params["preprocess"]["short_output_directory"], 
+                               params["preprocess"]["dry_output_directory"], model_chunk_size)
    
     # 4. Apply pedal board to dry audio
-    apply_wet_processing(CONFIG['DRY_OUTPUT_DIRECTORY'], CONFIG['WET_OUTPUT_DIRECTORY'], board)
+    apply_wet_processing(params["preprocess"]["dry_output_directory"], 
+                         params["preprocess"]["wet_output_directory"], board)
 
     # 6. Save to pt
     save_data_to_pt()
 
     # 7. Delete temporary files
-    os.system(f"rm -r {CONFIG['SHORT_OUTPUT_DIRECTORY']}")
+    os.system(f"rm -r {params['preprocess']['short_output_directory']}")
 
 if __name__ == "__main__":
     main()
