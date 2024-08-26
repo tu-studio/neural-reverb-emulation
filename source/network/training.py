@@ -14,6 +14,12 @@ def train(encoder, decoder, train_loader, val_loader, criterion, optimizer, sche
     # Initialize PQMF
     pqmf = PQMF(100, n_bands).to(device)
 
+    # Calculate total number of batches
+    total_batches = num_epochs * len(train_loader)
+
+    # Create a progress bar for the entire training process
+    progress_bar = tqdm(total=total_batches, desc="Training Progress")
+
     for epoch in range(num_epochs):
         #Train mode
         encoder.train()
@@ -24,12 +30,7 @@ def train(encoder, decoder, train_loader, val_loader, criterion, optimizer, sche
         train_epoch_kl_div = 0
         train_epoch_criterion = 0
 
-        print(f"Epoch {epoch + 1}/{num_epochs}")
-
-        # Create a progress bar for this epoch
-        progress_bar = tqdm(train_loader, desc=f"Training", leave=False)
-
-        for batch, (dry_audio, wet_audio) in enumerate(progress_bar):
+        for batch, (dry_audio, wet_audio) in enumerate(train_loader):
             dry_audio = dry_audio.to(device)
             wet_audio = wet_audio.to(device)
 
@@ -86,7 +87,8 @@ def train(encoder, decoder, train_loader, val_loader, criterion, optimizer, sche
             optimizer.step()
 
             # Update progress bar
-            progress_bar.set_postfix({'loss': f'{loss.item():.4f}'})
+            progress_bar.update(1)
+            progress_bar.set_postfix({'epoch': f'{epoch + 1}/{num_epochs}', 'loss': f'{loss.item():.4f}'})
 
         scheduler.step()
 
@@ -106,8 +108,7 @@ def train(encoder, decoder, train_loader, val_loader, criterion, optimizer, sche
         tensorboard_writer.add_audio("Audio/TCN_output", output[0].cpu(), epoch, sample_rate=sample_rate)
         tensorboard_writer.step()
 
-        print(f'Epoch {epoch + 1}/{num_epochs}, Training Loss: {train_avg_epoch_loss:.4f}')
-
+    progress_bar.close()
 
         # # Validation loop
         # encoder.eval()
