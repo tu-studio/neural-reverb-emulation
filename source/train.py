@@ -164,12 +164,13 @@ def main():
 
     writer.close()
 
-    # TODO: Save the model checkpointz
-    # # Save the model checkpoint
-    # output_file_path = Path('models/checkpoints/model.pth')
-    # output_file_path.parent.mkdir(parents=True, exist_ok=True)
-    # torch.save(model.state_dict(), output_file_path)
-    # print("Saved PyTorch Model State to model.pth")
+    # Save the model
+    save_path = Path('models/checkpoints')
+    save_path.mkdir(parents=True, exist_ok=True)
+    
+    torch.save(encoder.state_dict(), save_path / 'encoder.pth')
+    torch.save(decoder.state_dict(), save_path / 'decoder.pth')
+    print(f"Saved PyTorch Model States to {save_path}")
 
     print("Done with the training stage!")
 
