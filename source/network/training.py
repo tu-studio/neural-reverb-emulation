@@ -2,9 +2,10 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.nn.utils import clip_grad_norm_
-from network.ravepqmf import PQMF,  center_pad_next_pow_2
+from network.ravepqmf import PQMF, center_pad_next_pow_2
 from utils import config
 import os
+from tqdm import tqdm
 
 def train(encoder, decoder, train_loader, val_loader, criterion, optimizer, scheduler, tensorboard_writer, num_epochs=25, device='cpu', n_bands=64, use_kl=False, sample_rate=44100):
     encoder.to(device)
@@ -14,7 +15,6 @@ def train(encoder, decoder, train_loader, val_loader, criterion, optimizer, sche
     pqmf = PQMF(100, n_bands).to(device)
 
     for epoch in range(num_epochs):
-
         #Train mode
         encoder.train()
         decoder.train()
@@ -24,34 +24,25 @@ def train(encoder, decoder, train_loader, val_loader, criterion, optimizer, sche
         train_epoch_kl_div = 0
         train_epoch_criterion = 0
 
-        print(f"Epoch {epoch}")
+        print(f"Epoch {epoch + 1}/{num_epochs}")
 
-        # print(f"Train loader shape: {len(train_loader)}")
+        # Create a progress bar for this epoch
+        progress_bar = tqdm(train_loader, desc=f"Training", leave=False)
 
-        for batch, (dry_audio, wet_audio) in enumerate(train_loader):
-
+        for batch, (dry_audio, wet_audio) in enumerate(progress_bar):
             dry_audio = dry_audio.to(device)
             wet_audio = wet_audio.to(device)
-
-            # print(f"Dry audio shape: {dry_audio.shape}")
-            # print(f"Wet audio shape: {wet_audio.shape}")
 
             # Zero the parameter gradients
             optimizer.zero_grad()
 
-             # Pad both dry and wet audio to next power of 2
+            # Pad both dry and wet audio to next power of 2
             dry_audio = center_pad_next_pow_2(dry_audio)
             wet_audio = center_pad_next_pow_2(wet_audio)
-
-            # print(f"Dry audio shape after padding: {dry_audio.shape}")
-            # print(f"Wet audio shape after padding: {wet_audio.shape}")
 
             # Apply PQMF to input
             dry_audio_decomposed = pqmf(dry_audio)
             wet_audio_decomposed = pqmf(wet_audio)
-
-            # print(f"Dry audio decomposed shape: {dry_audio_decomposed.shape}")
-            # print(f"Wet audio decomposed shape: {wet_audio_decomposed.shape}")
 
             # Throw error if wet audio is longer than dry audio
             if wet_audio_decomposed.shape[-1] != dry_audio_decomposed.shape[-1]:
@@ -89,13 +80,14 @@ def train(encoder, decoder, train_loader, val_loader, criterion, optimizer, sche
                 loss += kl_div
 
             train_epoch_loss += loss 
-            
-            print(f"Loss: {loss}")
 
             # Backward pass and optimization
             loss.backward()
+            optimizer.step()
 
-        optimizer.step()
+            # Update progress bar
+            progress_bar.set_postfix({'loss': f'{loss.item():.4f}'})
+
         scheduler.step()
 
         train_avg_epoch_loss = train_epoch_loss / len(train_loader)
@@ -114,7 +106,8 @@ def train(encoder, decoder, train_loader, val_loader, criterion, optimizer, sche
         tensorboard_writer.add_audio("Audio/TCN_output", output[0].cpu(), epoch, sample_rate=sample_rate)
         tensorboard_writer.step()
 
-        print(f'Epoch {epoch}/{num_epochs}, Training Loss: {train_avg_epoch_loss}')
+        print(f'Epoch {epoch + 1}/{num_epochs}, Training Loss: {train_avg_epoch_loss:.4f}')
+
 
         # # Validation loop
         # encoder.eval()
