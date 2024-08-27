@@ -29,5 +29,5 @@ train:
   n_channels: 32
   lr: 0.001
   use_kl: false
-  use_skip: true 
+  use_skip: true
 
