@@ -1,7 +1,7 @@
 import torch
 
 class DecoderTCNBlock(torch.nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size, dilation, activation=True):
+    def __init__(self, in_channels, out_channels, kernel_size, dilation, activation=True, use_skip=True):
         super().__init__()
         self.conv = torch.nn.ConvTranspose1d(
             in_channels, 
@@ -26,22 +26,25 @@ class DecoderTCNBlock(torch.nn.Module):
 
         self.kernel_size = kernel_size
         self.dilation = dilation
+        self.use_skip = use_skip
 
     def forward(self, x, skip=None):
         x = self.conv(x)
         if hasattr(self, "act"):
             x = self.act(x)
-        x = x + self.alpha * skip
+        if self.use_skip:
+            x = x + self.alpha * skip
         return x
 
 class DecoderTCN(torch.nn.Module):
-    def __init__(self, n_outputs=1, n_blocks=10, kernel_size=13, n_channels=64, dilation_growth=4, latent_dim=16, use_kl=False):
+    def __init__(self, n_outputs=1, n_blocks=10, kernel_size=13, n_channels=64, dilation_growth=4, latent_dim=16, use_kl=False, use_skip=True):
         super().__init__()
         self.kernel_size = kernel_size
         self.n_channels = n_channels
         self.dilation_growth = dilation_growth
         self.n_blocks = n_blocks
         self.use_kl = use_kl
+        self.use_skip = use_skip
 
         # Add a convolutional layer to leave latent space
         initial_channels = n_channels * (2 ** (n_blocks - 1))
@@ -65,7 +68,7 @@ class DecoderTCN(torch.nn.Module):
             act = True
             dilation = dilation_growth ** (n_blocks - n)
             print(f"Appended block {n} with in_ch={in_ch}, kernel_size={kernel_size}, out_ch={out_ch}, dilation={dilation}.")
-            self.blocks.append(DecoderTCNBlock(in_ch, out_ch, kernel_size, dilation, activation=act))
+            self.blocks.append(DecoderTCNBlock(in_ch, out_ch, kernel_size, dilation, activation=act, use_skip=use_skip))
             if (n+1) != n_blocks:
                 in_ch = out_ch # Update in_ch for the next block
 

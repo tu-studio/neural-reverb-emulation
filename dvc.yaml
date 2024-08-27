@@ -49,6 +49,7 @@ stages:
     - train.n_channels
     - train.lr
     - train.use_kl
+    - train.use_skip
     - train.scheduler_rate
   #   outs:
   #   - model/checkpoints/

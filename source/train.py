@@ -31,6 +31,7 @@ def main():
     input_file = params["train"]["input_file"]
     input_size = params["general"]["input_size"]
     scheduler_rate = params["train"]["scheduler_rate"]
+    use_skip = params["train"]["use_skip"]
 
     # Create a SummaryWriter object to write the tensorboard logs
     tensorboard_path = logs.return_tensorboard_path()
@@ -59,7 +60,8 @@ def main():
         dilation_growth=dilation_growth, 
         n_channels=n_channels,
         latent_dim=latent_dim,
-        use_kl=use_kl)
+        use_kl=use_kl,
+        use_skip=use_skip)
     
     random_input = torch.randn(1, n_bands, int(2**math.ceil(math.log2(input_size))/n_bands))
     random_skips = []
