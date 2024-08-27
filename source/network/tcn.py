@@ -37,7 +37,6 @@ class TCN(nn.Module):
         self.n_channels = n_channels
         self.dilation_growth = dilation_growth
         self.n_blocks = n_blocks
-        self.stack_size = n_blocks
 
         self.blocks = nn.ModuleList()
         for n in range(n_blocks):
@@ -62,6 +61,6 @@ class TCN(nn.Module):
     def compute_receptive_field(self):
         rf = self.kernel_size
         for n in range(1, self.n_blocks):
-            dilation = self.dilation_growth ** (n % self.stack_size)
+            dilation = self.dilation_growth ** (n % self.n_blocks)
             rf = rf + ((self.kernel_size - 1) * dilation)
         return rf
