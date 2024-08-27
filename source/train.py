@@ -88,6 +88,11 @@ def main():
         # Add the model graphs to the tensorboard logs
         writer.add_graph(encoder, random_input.to(device))
         writer.add_graph(decoder, [x.to(device), [skip.to(device) for skip in random_skips]])
+
+        # Setup optimizer
+        model_params = list(encoder.parameters())
+        model_params += list(decoder.parameters())
+        optimizer = torch.optim.Adam(model_params, lr, (0.5, 0.9))
     
     elif model_type == "tcn":
         model = TCN(
@@ -105,12 +110,12 @@ def main():
         # Add the model graph to the tensorboard logs
         writer.add_graph(model, torch.randn(1, n_bands, input_size).to(device))
 
+        model_params = list(model.parameters())
+
     # setup loss function, optimizer, and scheduler
     criterion = spectral_distance
 
     # Setup optimizer
-    model_params = list(encoder.parameters())
-    model_params += list(decoder.parameters())
     optimizer = torch.optim.Adam(model_params, lr, (0.5, 0.9))
 
     scheduler_milestones = [0.5,0.8,0.95]
