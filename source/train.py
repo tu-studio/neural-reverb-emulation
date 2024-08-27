@@ -35,6 +35,8 @@ def main():
     use_skip = params["train"]["use_skip"]
     use_tcn = params["train"]["use_tcn"]
 
+    print(use_tcn)
+
     # Create a SummaryWriter object to write the tensorboard logs
     tensorboard_path = logs.return_tensorboard_path()
     metrics = {}
