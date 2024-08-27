@@ -98,8 +98,8 @@ def main():
     
     elif use_tcn:
         model = TCN(
-            n_inputs=n_bands,
-            n_outputs=n_bands,
+            n_inputs=n_inputs,
+            n_outputs=n_inputs,
             kernel_size=kernel_size,
             n_blocks=n_blocks,
             n_channels=n_channels,
@@ -107,10 +107,10 @@ def main():
         )
         
         print("TCN Architecture")
-        torchinfo.summary(model, input_data=torch.randn(1, n_bands, input_size), device=device)
+        torchinfo.summary(model, input_data=torch.randn(1, n_inputs, input_size), device=device)
 
         # Add the model graph to the tensorboard logs
-        writer.add_graph(model, torch.randn(1, n_bands, input_size).to(device))
+        writer.add_graph(model, torch.randn(1, n_inputs, input_size).to(device))
 
         model_params = list(model.parameters())
 
