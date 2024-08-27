@@ -105,7 +105,7 @@ def main():
         )
         
         print("TCN Architecture")
-        torchinfo.summary(model, input_data=torch.randn(1, n_bands, int(2**math.ceil(math.log2(input_size))/n_bands)), device=device)
+        torchinfo.summary(model, input_data=torch.randn(1, n_bands, input_size), device=device)
 
         # Add the model graph to the tensorboard logs
         writer.add_graph(model, torch.randn(1, n_bands, input_size).to(device))
