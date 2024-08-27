@@ -162,31 +162,26 @@ def main():
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
-    # Train the model
-    train(encoder, 
-          decoder, 
-          train_loader, 
-          val_loader, 
-          criterion, 
-          optimizer, 
-          scheduler,
-          tensorboard_writer=writer, 
-          num_epochs=n_epochs, 
-          device=device,
-          n_bands=n_bands, 
-          use_kl=use_kl, 
-          sample_rate=sample_rate)
-
-    # Evaluate the model
-    test(encoder, 
-         decoder, 
-         test_loader,
-         criterion, 
-         writer, 
-         device, 
-         n_bands, 
-         use_kl, 
-         sample_rate)
+    # Modify the training and testing calls to work with both model types
+    if model_type == "encoder_decoder":
+        train(encoder, decoder, train_loader, val_loader, criterion, optimizer, scheduler,
+              tensorboard_writer=writer, num_epochs=n_epochs, device=device,
+              n_bands=n_bands, use_kl=use_kl, sample_rate=sample_rate)
+        
+        test(encoder, decoder, test_loader, criterion, writer, device, n_bands, use_kl, sample_rate)
+        
+        # Save the models
+        torch.save(encoder.state_dict(), save_path / 'encoder.pth')
+        torch.save(decoder.state_dict(), save_path / 'decoder.pth')
+    else:
+        train(model, None, train_loader, val_loader, criterion, optimizer, scheduler,
+              tensorboard_writer=writer, num_epochs=n_epochs, device=device,
+              n_bands=n_bands, use_kl=False, sample_rate=sample_rate)
+        
+        test(model, None, test_loader, criterion, writer, device, n_bands, False, sample_rate)
+        
+        # Save the model
+        torch.save(model.state_dict(), save_path / 'tcn_model.pth')
 
     writer.close()
 
