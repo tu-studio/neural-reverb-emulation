@@ -75,6 +75,10 @@ def train(encoder, decoder, train_loader, val_loader, criterion, optimizer, sche
             output = pqmf.inverse(output_decomposed)
             wet = pqmf.inverse(wet_audio_decomposed)
 
+            if decoder == None:
+                rf = encoder.compute_receptive_field()
+                wet = wet[..., rf:dry.shape[-1]]
+
             loss = criterion(output , wet)
 
             train_epoch_criterion += loss
