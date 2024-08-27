@@ -3,6 +3,7 @@ import torchinfo
 from torch.utils.data import  random_split, DataLoader
 from network.encoder import EncoderTCN
 from network.decoder import DecoderTCN
+from network.tcn import TCN
 from network.training import train
 from network.testing import test
 from network.dataset import AudioDataset
@@ -32,6 +33,7 @@ def main():
     input_size = params["general"]["input_size"]
     scheduler_rate = params["train"]["scheduler_rate"]
     use_skip = params["train"]["use_skip"]
+    model_type = params["train"]["model_type"]
 
     # Create a SummaryWriter object to write the tensorboard logs
     tensorboard_path = logs.return_tensorboard_path()
@@ -43,48 +45,65 @@ def main():
     # Prepare the requested device for training. Use cpu if the requested device is not available 
     device = config.prepare_device(device_request)
 
-        # Build the model
-    encoder = EncoderTCN(
-        n_inputs=n_bands,
-        kernel_size=kernel_size, 
-        n_blocks=n_blocks, 
-        dilation_growth=dilation_growth, 
-        n_channels=n_channels,
-        latent_dim=latent_dim,
-        use_kl=use_kl)
+    # Build the model
+    if model_type == "encoder_decoder":
+        encoder = EncoderTCN(
+            n_inputs=n_bands,
+            kernel_size=kernel_size, 
+            n_blocks=n_blocks, 
+            dilation_growth=dilation_growth, 
+            n_channels=n_channels,
+            latent_dim=latent_dim,
+            use_kl=use_kl)
+        
+        decoder = DecoderTCN(
+            n_outputs=n_bands,
+            kernel_size=kernel_size,
+            n_blocks=n_blocks, 
+            dilation_growth=dilation_growth, 
+            n_channels=n_channels,
+            latent_dim=latent_dim,
+            use_kl=use_kl,
+            use_skip=use_skip)
+        
+        random_input = torch.randn(1, n_bands, int(2**math.ceil(math.log2(input_size))/n_bands))
+        random_skips = []
+        x = random_input
+        for block in encoder.blocks:
+            x = block(x)
+            random_skips.append(x)
+        random_skips.pop()
+        random_skips = random_skips[::-1]
+        random_skips.append(random_input)
+
+        print("Encoder Architecture")
+        print("Input shape: ", random_input.shape)
+        torchinfo.summary(encoder, input_data=random_input, device=device)
+
+        print("Decoder Architecture")
+        print("Input shape: ", x.shape)
+        print("Random skips shape: ", [i.shape for i in random_skips])
+        torchinfo.summary(decoder, input_data=[x, random_skips], device=device)
+
+        # Add the model graphs to the tensorboard logs
+        writer.add_graph(encoder, random_input.to(device))
+        writer.add_graph(decoder, [x.to(device), [skip.to(device) for skip in random_skips]])
     
-    decoder = DecoderTCN(
-        n_outputs=n_bands,
-        kernel_size=kernel_size,
-        n_blocks=n_blocks, 
-        dilation_growth=dilation_growth, 
-        n_channels=n_channels,
-        latent_dim=latent_dim,
-        use_kl=use_kl,
-        use_skip=use_skip)
-    
-    random_input = torch.randn(1, n_bands, int(2**math.ceil(math.log2(input_size))/n_bands))
-    random_skips = []
-    x = random_input
-    for block in encoder.blocks:
-        x = block(x)
-        random_skips.append(x)
-    random_skips.pop()
-    random_skips = random_skips[::-1]
-    random_skips.append(random_input)
+    elif model_type == "tcn":
+        model = TCN(
+            n_inputs=n_bands,
+            n_outputs=n_bands,
+            kernel_size=kernel_size,
+            n_blocks=n_blocks,
+            n_channels=n_channels,
+            dilation_growth=dilation_growth
+        )
+        
+        print("TCN Architecture")
+        torchinfo.summary(model, input_data=torch.randn(1, n_bands, int(2**math.ceil(math.log2(input_size))/n_bands)), device=device)
 
-    print("Encoder Architecture")
-    print("Input shape: ", random_input.shape)
-    torchinfo.summary(encoder, input_data=random_input, device=device)
-
-    print("Decoder Architecture")
-    print("Input shape: ", x.shape)
-    print("Random skips shape: ", [i.shape for i in random_skips])
-    torchinfo.summary(decoder, input_data=[x, random_skips], device=device)
-
-    # Add the model graphs to the tensorboard logs
-    writer.add_graph(encoder, random_input.to(device))
-    writer.add_graph(decoder, [x.to(device), [skip.to(device) for skip in random_skips]])
+        # Add the model graph to the tensorboard logs
+        writer.add_graph(model, torch.randn(1, n_bands, input_size).to(device))
 
     # setup loss function, optimizer, and scheduler
     criterion = spectral_distance
