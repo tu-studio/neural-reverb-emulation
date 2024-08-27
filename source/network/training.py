@@ -77,6 +77,10 @@ def train(encoder, decoder, train_loader, val_loader, criterion, optimizer, sche
 
             if decoder == None:
                 rf = encoder.compute_receptive_field()
+                print(rf)
+                print(dry.shape)
+                print(wet.shape)
+                print(output.shape)
                 wet = wet[..., rf:dry.shape[-1]]
 
             loss = criterion(output , wet)
