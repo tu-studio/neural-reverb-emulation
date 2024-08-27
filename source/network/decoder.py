@@ -79,3 +79,6 @@ class DecoderTCN(torch.nn.Module):
         for i, (block, skip) in enumerate(zip(self.blocks, skips)):
             x = block(x, skip)
         return x
+    
+    def get_alpha_values(self):
+        return [block.alpha.item() for block in self.blocks]
