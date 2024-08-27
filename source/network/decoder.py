@@ -68,7 +68,10 @@ class DecoderTCN(torch.nn.Module):
             act = True
             dilation = dilation_growth ** (n_blocks - n)
             print(f"Appended block {n} with in_ch={in_ch}, kernel_size={kernel_size}, out_ch={out_ch}, dilation={dilation}.")
-            self.blocks.append(DecoderTCNBlock(in_ch, out_ch, kernel_size, dilation, activation=act, use_skip=use_skip))
+            if (n+1) != n_blocks:
+                self.blocks.append(DecoderTCNBlock(in_ch, out_ch, kernel_size, dilation, activation=act, use_skip=use_skip))
+            else: 
+                self.blocks.append(DecoderTCNBlock(in_ch, out_ch, kernel_size, dilation, activation=act, use_skip=False))
             if (n+1) != n_blocks:
                 in_ch = out_ch # Update in_ch for the next block
 
