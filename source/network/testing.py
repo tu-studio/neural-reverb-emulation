@@ -4,11 +4,16 @@ from tqdm import tqdm
 
 def test(encoder, decoder, test_loader, criterion, tensorboard_writer, device='cpu', n_bands=64, use_kl=False, sample_rate=44100):
     encoder.to(device)
-    decoder.to(device)
+    if decoder:
+        decoder.to(device)
     
     # Set model to evaluation mode
     encoder.eval()
-    decoder.eval()
+    if decoder:
+        decoder.eval()
+
+    if decoder == None:
+        n_bands = 1
     
     # Initialize PQMF
     pqmf = PQMF(100, n_bands).to(device)
@@ -36,23 +41,27 @@ def test(encoder, decoder, test_loader, criterion, tensorboard_writer, device='c
             dry_audio_decomposed = pqmf(dry_audio)
             wet_audio_decomposed = pqmf(wet_audio)
 
-            # Forward pass through encoder
-            if use_kl:
-                mu, logvar, encoder_outputs = encoder(dry_audio_decomposed)
-                z = encoder.reparameterize(mu, logvar)
-                kl_div = (-0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())) / mu.shape[-1]
-                test_kl_div += kl_div
+             # Forward pass
+            if decoder:
+                # Encoder-Decoder architecture
+                if use_kl:
+                    mu, logvar, encoder_outputs = encoder(dry_audio_decomposed)
+                    z = encoder.reparameterize(mu, logvar)
+                    kl_div = (-0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())) / mu.shape[-1]
+                    train_epoch_kl_div += kl_div
+                else:
+                    encoder_outputs = encoder(dry_audio_decomposed)
+                    z = encoder_outputs.pop()
+
+                encoder_outputs = encoder_outputs[::-1]
+                output_decomposed = decoder(z, encoder_outputs)
             else:
-                encoder_outputs = encoder(dry_audio_decomposed)
-                z = encoder_outputs.pop()
+                # TCN architecture
+                rf = encoder.compute_receptive_field()
+                output_decomposed = encoder(dry_audio_decomposed)
+                wet_audio_decomposed = wet_audio_decomposed[..., rf:]
 
-            # Reverse the list of encoder outputs for the decoder
-            encoder_outputs = encoder_outputs[::-1]
-
-            # Forward pass through decoder
-            net_outputs_decomposed = decoder(z, encoder_outputs)
-
-            output = pqmf.inverse(net_outputs_decomposed)
+            output = pqmf.inverse(output_decomposed)
             dry = pqmf.inverse(dry_audio_decomposed)
             wet = pqmf.inverse(wet_audio_decomposed)
 
