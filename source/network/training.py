@@ -9,7 +9,8 @@ from tqdm import tqdm
 
 def train(encoder, decoder, train_loader, val_loader, criterion, optimizer, scheduler, tensorboard_writer, num_epochs=25, device='cpu', n_bands=64, use_kl=False, sample_rate=44100):
     encoder.to(device)
-    decoder.to(device)
+    if decoder:
+        decoder.to(device)
 
     # Initialize PQMF
     pqmf = PQMF(100, n_bands).to(device)
@@ -51,23 +52,23 @@ def train(encoder, decoder, train_loader, val_loader, criterion, optimizer, sche
         
             dry_audio_decomposed, wet_audio_decomposed = dry_audio_decomposed.to(device), wet_audio_decomposed.to(device)
     
-            # Forward pass through encoder
-            if use_kl:
-                mu, logvar, encoder_outputs = encoder(dry_audio_decomposed)
-                z = encoder.reparameterize(mu, logvar)
-                kl_div = (-0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp()))/ mu.shape[-1]
-                train_epoch_kl_div += kl_div
+            # Forward pass
+            if decoder:
+                # Encoder-Decoder architecture
+                if use_kl:
+                    mu, logvar, encoder_outputs = encoder(dry_audio_decomposed)
+                    z = encoder.reparameterize(mu, logvar)
+                    kl_div = (-0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())) / mu.shape[-1]
+                    train_epoch_kl_div += kl_div
+                else:
+                    encoder_outputs = encoder(dry_audio_decomposed)
+                    z = encoder_outputs.pop()
+
+                encoder_outputs = encoder_outputs[::-1]
+                output_decomposed = decoder(z, encoder_outputs)
             else:
-                encoder_outputs = encoder(dry_audio_decomposed)
-                z = encoder_outputs.pop()
-
-            # Reverse the list of encoder outputs for the decoder
-            encoder_outputs = encoder_outputs[::-1]
-
-            # Forward pass through decoder
-            net_outputs_decomposed = decoder(z, encoder_outputs)
-
-            output_decomposed = net_outputs_decomposed
+                # TCN architecture
+                output_decomposed = encoder(dry_audio_decomposed)
 
             dry = pqmf.inverse(dry_audio_decomposed)
             output = pqmf.inverse(output_decomposed)
@@ -114,7 +115,8 @@ def train(encoder, decoder, train_loader, val_loader, criterion, optimizer, sche
 
         # Validation loop
         encoder.eval()
-        decoder.eval()
+        if decoder:
+            decoder.eval()
         val_epoch_loss = 0
         val_epoch_kl_div = 0
         val_epoch_criterion = 0
@@ -136,23 +138,23 @@ def train(encoder, decoder, train_loader, val_loader, criterion, optimizer, sche
                 if wet_audio_decomposed.shape[-1] != dry_audio_decomposed.shape[-1]:
                     raise ValueError(f"Wet audio is not the same length as dry audio: {wet_audio_decomposed.shape[-1]} vs {dry_audio_decomposed.shape[-1]}")
 
-                # Forward pass through encoder
-                if use_kl:
-                    mu, logvar, encoder_outputs = encoder(dry_audio_decomposed)
-                    z = encoder.reparameterize(mu, logvar)
-                    kl_div = (-0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())) / mu.shape[-1]
-                    val_epoch_kl_div += kl_div
+                 # Forward pass
+                if decoder:
+                    # Encoder-Decoder architecture
+                    if use_kl:
+                        mu, logvar, encoder_outputs = encoder(dry_audio_decomposed)
+                        z = encoder.reparameterize(mu, logvar)
+                        kl_div = (-0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())) / mu.shape[-1]
+                        train_epoch_kl_div += kl_div
+                    else:
+                        encoder_outputs = encoder(dry_audio_decomposed)
+                        z = encoder_outputs.pop()
+
+                    encoder_outputs = encoder_outputs[::-1]
+                    output_decomposed = decoder(z, encoder_outputs)
                 else:
-                    encoder_outputs = encoder(dry_audio_decomposed)
-                    z = encoder_outputs.pop()
-
-                # Reverse the list of encoder outputs for the decoder
-                encoder_outputs = encoder_outputs[::-1]
-
-                # Forward pass through decoder
-                net_outputs_decomposed = decoder(z, encoder_outputs)
-
-                output_decomposed = net_outputs_decomposed
+                    # TCN architecture
+                    output_decomposed = encoder(dry_audio_decomposed)
 
                 dry = pqmf.inverse(dry_audio_decomposed)
                 output = pqmf.inverse(output_decomposed)
