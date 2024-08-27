@@ -24,7 +24,8 @@ def train(encoder, decoder, train_loader, val_loader, criterion, optimizer, sche
     for epoch in range(num_epochs):
         #Train mode
         encoder.train()
-        decoder.train()
+        if decoder:
+            decoder.train()
 
         #initialize epoch losses
         train_epoch_loss = 0
@@ -103,8 +104,9 @@ def train(encoder, decoder, train_loader, val_loader, criterion, optimizer, sche
         tensorboard_writer.add_scalar("Loss/ training criterion", train_avg_epoch_loss_criterion, epoch)
         if use_kl:
             tensorboard_writer.add_scalar("Loss/training kl_div", train_avg_epoch_kl_div, epoch)
-        for i, alpha in enumerate(decoder.get_alpha_values()):
-            tensorboard_writer.add_scalar(f"Alpha/Block_{i}", alpha, epoch)
+        if decoder:
+            for i, alpha in enumerate(decoder.get_alpha_values()):
+                tensorboard_writer.add_scalar(f"Alpha/Block_{i}", alpha, epoch)
         # Log audio samples
         tensorboard_writer.add_audio("Audio/TCN_Input", dry_audio[0].cpu(), epoch, sample_rate=sample_rate)
         tensorboard_writer.add_audio("Audio/TCN_Target", wet_audio[0].cpu(), epoch, sample_rate=sample_rate)
