@@ -11,6 +11,9 @@ def train(encoder, decoder, train_loader, val_loader, criterion, optimizer, sche
     encoder.to(device)
     if decoder:
         decoder.to(device)
+    
+    if decoder == None:
+        n_bands = 1
 
     # Initialize PQMF
     pqmf = PQMF(100, n_bands).to(device)
