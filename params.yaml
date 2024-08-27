@@ -30,5 +30,5 @@ train:
   lr: 0.001
   use_kl: false
   use_skip: true
-  model_type: encoder_decoder
+  use_tcn: true
 

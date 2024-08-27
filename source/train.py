@@ -33,7 +33,7 @@ def main():
     input_size = params["general"]["input_size"]
     scheduler_rate = params["train"]["scheduler_rate"]
     use_skip = params["train"]["use_skip"]
-    model_type = params["train"]["model_type"]
+    use_tcn = params["train"]["use_tcn"]
 
     # Create a SummaryWriter object to write the tensorboard logs
     tensorboard_path = logs.return_tensorboard_path()
@@ -46,7 +46,7 @@ def main():
     device = config.prepare_device(device_request)
 
     # Build the model
-    if model_type == "encoder_decoder":
+    if not use_tcn:
         encoder = EncoderTCN(
             n_inputs=n_bands,
             kernel_size=kernel_size, 
@@ -94,7 +94,7 @@ def main():
         model_params += list(decoder.parameters())
         optimizer = torch.optim.Adam(model_params, lr, (0.5, 0.9))
     
-    elif model_type == "tcn":
+    elif use_tcn:
         model = TCN(
             n_inputs=n_bands,
             n_outputs=n_bands,
@@ -163,7 +163,7 @@ def main():
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
     # Modify the training and testing calls to work with both model types
-    if model_type == "encoder_decoder":
+    if not use_tcn:
         train(encoder, decoder, train_loader, val_loader, criterion, optimizer, scheduler,
               tensorboard_writer=writer, num_epochs=n_epochs, device=device,
               n_bands=n_bands, use_kl=use_kl, sample_rate=sample_rate)
@@ -171,6 +171,9 @@ def main():
         test(encoder, decoder, test_loader, criterion, writer, device, n_bands, use_kl, sample_rate)
         
         # Save the models
+        save_path = Path('models/checkpoints')
+        save_path.mkdir(parents=True, exist_ok=True)
+
         torch.save(encoder.state_dict(), save_path / 'encoder.pth')
         torch.save(decoder.state_dict(), save_path / 'decoder.pth')
     else:
@@ -181,19 +184,14 @@ def main():
         test(model, None, test_loader, criterion, writer, device, n_bands, False, sample_rate)
         
         # Save the model
+        save_path = Path('models/checkpoints')
+        save_path.mkdir(parents=True, exist_ok=True)
+
         torch.save(model.state_dict(), save_path / 'tcn_model.pth')
 
     writer.close()
 
-    # Save the model
-    save_path = Path('models/checkpoints')
-    save_path.mkdir(parents=True, exist_ok=True)
-    
-    torch.save(encoder.state_dict(), save_path / 'encoder.pth')
-    torch.save(decoder.state_dict(), save_path / 'decoder.pth')
-    print(f"Saved PyTorch Model States to {save_path}")
-
-    print("Done with the training stage!")
+    print("Done !")
 
 if __name__ == "__main__":
     main()

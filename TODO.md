@@ -8,9 +8,12 @@
 - Evaluate loop should also log values e.g loss, accuracy, etc. --> Done
 - Save models after training --> Done - check where saved
 - Implement training progress line --> Done
-- Add more weights to the skip connections
+- Add more weights to the skip connections --> No but checked alpha is learned
 - put the params of the scheduler iinto params.yaml --> Done
 - print the graph --> Done
+- Add TCN --> Done
+- Print Encoder and Decoder together
+- don't add dry to the loss --> Done
 
 ## Pipeline specific
 

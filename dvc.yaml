@@ -52,7 +52,7 @@ stages:
     - train.use_kl
     - train.use_skip
     - train.scheduler_rate
-    - train.model_type
+    - train.use_tcn
   #   outs:
   #   - model/checkpoints/
   # export:
