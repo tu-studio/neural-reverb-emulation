@@ -65,12 +65,6 @@ def test(encoder, decoder, test_loader, criterion, tensorboard_writer, device='c
             test_loss += loss 
             test_criterion += loss
 
-            # Log audio samples (for the first batch only)
-            if batch == 0:
-                tensorboard_writer.add_audio("Audio/Test_Input", dry_audio[0].cpu(), 0, sample_rate=sample_rate)
-                tensorboard_writer.add_audio("Audio/Test_Target", wet_audio[0].cpu(), 0, sample_rate=sample_rate)
-                tensorboard_writer.add_audio("Audio/Test_Output", output[0].cpu(), 0, sample_rate=sample_rate)
-
             # Update progress bar
             progress_bar.update(1)
             progress_bar.set_postfix({'loss': f'{loss.item():.4f}'})
