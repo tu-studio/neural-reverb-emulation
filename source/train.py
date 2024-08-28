@@ -119,6 +119,7 @@ def main():
 
     # setup loss function, optimizer, and scheduler
     criterion = spectral_distance
+    criterion = torch.nn.MSELoss()
 
     # Setup optimizer
     optimizer = torch.optim.Adam(model_params, lr, (0.5, 0.9))
