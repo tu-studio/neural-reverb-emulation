@@ -63,7 +63,7 @@ def test(encoder, decoder, test_loader, criterion, tensorboard_writer, device='c
                 # TCN architecture
                 rf = encoder.compute_receptive_field()
                 output_decomposed = encoder(dry_audio_decomposed)
-                wet_audio_decomposed = wet_audio_decomposed[..., rf:]
+                wet_audio_decomposed = wet_audio_decomposed[..., rf-1:]
 
             if n_bands > 1:
                 output = pqmf.inverse(output_decomposed)

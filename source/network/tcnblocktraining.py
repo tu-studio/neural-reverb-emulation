@@ -13,7 +13,7 @@ def train_tcn_with_visualization(model, train_loader, val_loader, criterion, opt
             
             output, intermediate_outputs = model(dry_audio)
             
-            wet_audio_trimmed = wet_audio[..., rf:]
+            wet_audio_trimmed = wet_audio[..., rf-1:]
             
             loss = criterion(output, wet_audio_trimmed)
             loss.backward()
@@ -43,7 +43,7 @@ def train_tcn_with_visualization(model, train_loader, val_loader, criterion, opt
                 output, intermediate_outputs = model(dry_audio)
                 
 
-                wet_audio_trimmed = wet_audio[..., rf:]
+                wet_audio_trimmed = wet_audio[..., rf-1:]
                 
                 loss = criterion(output, wet_audio_trimmed)
                 val_loss += loss.item()

@@ -78,7 +78,7 @@ def train(encoder, decoder, train_loader, val_loader, criterion, optimizer, sche
                 # TCN architecture
                 rf = encoder.compute_receptive_field()
                 output_decomposed = encoder(dry_audio_decomposed)
-                wet_audio_decomposed = wet_audio_decomposed[..., rf:]
+                wet_audio_decomposed = wet_audio_decomposed[..., rf-1:]
 
             if n_bands > 1:
                 dry = pqmf.inverse(dry_audio_decomposed)
@@ -175,7 +175,7 @@ def train(encoder, decoder, train_loader, val_loader, criterion, optimizer, sche
                     # TCN architecture
                     rf = encoder.compute_receptive_field()
                     output_decomposed = encoder(dry_audio_decomposed)
-                    wet_audio_decomposed = wet_audio_decomposed[..., rf:]
+                    wet_audio_decomposed = wet_audio_decomposed[..., rf-1:]
 
                 if n_bands > 1:
                     dry = pqmf.inverse(dry_audio_decomposed)
