@@ -69,6 +69,9 @@ def test(encoder, decoder, test_loader, criterion, tensorboard_writer, device='c
                 output = pqmf.inverse(output_decomposed)
                 dry = pqmf.inverse(dry_audio_decomposed)
                 wet = pqmf.inverse(wet_audio_decomposed)
+            else:
+                output = output_decomposed
+                wet =  wet_audio_decomposed
 
             # Compute loss
             loss = criterion(output, wet)

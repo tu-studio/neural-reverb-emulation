@@ -84,6 +84,9 @@ def train(encoder, decoder, train_loader, val_loader, criterion, optimizer, sche
                 dry = pqmf.inverse(dry_audio_decomposed)
                 output = pqmf.inverse(output_decomposed)
                 wet = pqmf.inverse(wet_audio_decomposed)
+            else:
+                output = output_decomposed
+                wet =  wet_audio_decomposed
 
             loss = criterion(output , wet)
 
@@ -178,6 +181,9 @@ def train(encoder, decoder, train_loader, val_loader, criterion, optimizer, sche
                     dry = pqmf.inverse(dry_audio_decomposed)
                     output = pqmf.inverse(output_decomposed)
                     wet = pqmf.inverse(wet_audio_decomposed)
+                else:
+                    output = output_decomposed
+                    wet =  wet_audio_decomposed
 
                 loss = criterion(output, wet)
 
