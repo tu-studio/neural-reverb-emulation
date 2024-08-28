@@ -64,3 +64,27 @@ class TCN(nn.Module):
             dilation = self.dilation_growth ** (n % self.n_blocks)
             rf = rf + ((self.kernel_size - 1) * dilation)
         return rf
+
+class ModifiedTCN(nn.Module):
+    def __init__(self, n_inputs, n_outputs, kernel_size, n_blocks, n_channels, dilation_growth):
+        super().__init__()
+        self.blocks = nn.ModuleList()
+        for i in range(n_blocks):
+            dilation = dilation_growth ** i
+            in_channels = n_inputs if i == 0 else n_channels
+            out_channels = n_outputs if i == n_blocks - 1 else n_channels
+            self.blocks.append(TCNBlock(in_channels, out_channels, kernel_size, dilation))
+
+    def forward(self, x):
+        intermediate_outputs = []
+        for block in self.blocks:
+            x = block(x)
+            intermediate_outputs.append(x)
+        return x, intermediate_outputs
+    
+    def compute_receptive_field(self):
+        rf = self.kernel_size
+        for n in range(1, self.n_blocks):
+            dilation = self.dilation_growth ** (n % self.n_blocks)
+            rf = rf + ((self.kernel_size - 1) * dilation)
+        return rf
