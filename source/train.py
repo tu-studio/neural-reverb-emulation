@@ -88,7 +88,7 @@ def main():
         print("Random skips shape: ", [i.shape for i in random_skips])
         torchinfo.summary(decoder, input_data=[x, random_skips], device=device)
 
-       combined_model = CombinedEncoderDecoder(encoder, decoder)
+        combined_model = CombinedEncoderDecoder(encoder, decoder)
 
         # Add the combined model graph to TensorBoard
         random_input = torch.randn(1, n_bands, int(2**math.ceil(math.log2(input_size))/n_bands))
