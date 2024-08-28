@@ -43,12 +43,16 @@ def train(encoder, decoder, train_loader, val_loader, criterion, optimizer, sche
             optimizer.zero_grad()
 
             # Pad both dry and wet audio to next power of 2
-            dry_audio = center_pad_next_pow_2(dry_audio)
-            wet_audio = center_pad_next_pow_2(wet_audio)
+            if n_bands > 1:
+                dry_audio = center_pad_next_pow_2(dry_audio)
+                wet_audio = center_pad_next_pow_2(wet_audio)
 
-            # Apply PQMF to input
-            dry_audio_decomposed = pqmf(dry_audio)
-            wet_audio_decomposed = pqmf(wet_audio)
+                # Apply PQMF to input
+                dry_audio_decomposed = pqmf(dry_audio)
+                wet_audio_decomposed = pqmf(wet_audio)
+            else: 
+                dry_audio_decomposed = dry_audio
+                wet_audio_decomposed = wet_audio
 
             # Throw error if wet audio is longer than dry audio
             if wet_audio_decomposed.shape[-1] != dry_audio_decomposed.shape[-1]:
@@ -76,9 +80,10 @@ def train(encoder, decoder, train_loader, val_loader, criterion, optimizer, sche
                 output_decomposed = encoder(dry_audio_decomposed)
                 wet_audio_decomposed = wet_audio_decomposed[..., rf:]
 
-            dry = pqmf.inverse(dry_audio_decomposed)
-            output = pqmf.inverse(output_decomposed)
-            wet = pqmf.inverse(wet_audio_decomposed)
+            if n_bands > 1:
+                dry = pqmf.inverse(dry_audio_decomposed)
+                output = pqmf.inverse(output_decomposed)
+                wet = pqmf.inverse(wet_audio_decomposed)
 
             loss = criterion(output , wet)
 
@@ -133,13 +138,17 @@ def train(encoder, decoder, train_loader, val_loader, criterion, optimizer, sche
                 dry_audio = dry_audio.to(device)
                 wet_audio = wet_audio.to(device)
 
-                # Pad both dry and wet audio to next power of 2
-                dry_audio = center_pad_next_pow_2(dry_audio)
-                wet_audio = center_pad_next_pow_2(wet_audio)
+                if n_bands > 1:
+                    # Pad both dry and wet audio to next power of 2
+                    dry_audio = center_pad_next_pow_2(dry_audio)
+                    wet_audio = center_pad_next_pow_2(wet_audio)
 
-                # Apply PQMF to input
-                dry_audio_decomposed = pqmf(dry_audio)
-                wet_audio_decomposed = pqmf(wet_audio)
+                    # Apply PQMF to input
+                    dry_audio_decomposed = pqmf(dry_audio)
+                    wet_audio_decomposed = pqmf(wet_audio)
+                else:
+                    dry_audio_decomposed = dry_audio
+                    wet_audio_decomposed = wet_audio
 
                 # Throw error if wet audio is longer than dry audio
                 if wet_audio_decomposed.shape[-1] != dry_audio_decomposed.shape[-1]:
@@ -165,9 +174,10 @@ def train(encoder, decoder, train_loader, val_loader, criterion, optimizer, sche
                     output_decomposed = encoder(dry_audio_decomposed)
                     wet_audio_decomposed = wet_audio_decomposed[..., rf:]
 
-                dry = pqmf.inverse(dry_audio_decomposed)
-                output = pqmf.inverse(output_decomposed)
-                wet = pqmf.inverse(wet_audio_decomposed)
+                if n_bands > 1:
+                    dry = pqmf.inverse(dry_audio_decomposed)
+                    output = pqmf.inverse(output_decomposed)
+                    wet = pqmf.inverse(wet_audio_decomposed)
 
                 loss = criterion(output, wet)
 

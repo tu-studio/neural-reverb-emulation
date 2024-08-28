@@ -33,13 +33,17 @@ def test(encoder, decoder, test_loader, criterion, tensorboard_writer, device='c
             dry_audio = dry_audio.to(device)
             wet_audio = wet_audio.to(device)
 
-            # Pad both dry and wet audio to next power of 2
-            dry_audio = center_pad_next_pow_2(dry_audio)
-            wet_audio = center_pad_next_pow_2(wet_audio)
-            
-            # Apply PQMF to input
-            dry_audio_decomposed = pqmf(dry_audio)
-            wet_audio_decomposed = pqmf(wet_audio)
+            if n_bands > 1:
+                # Pad both dry and wet audio to next power of 2
+                dry_audio = center_pad_next_pow_2(dry_audio)
+                wet_audio = center_pad_next_pow_2(wet_audio)
+                
+                # Apply PQMF to input
+                dry_audio_decomposed = pqmf(dry_audio)
+                wet_audio_decomposed = pqmf(wet_audio)
+            else: 
+                dry_audio_decomposed = dry_audio
+                wet_audio_decomposed = wet_audio
 
              # Forward pass
             if decoder:
@@ -61,9 +65,10 @@ def test(encoder, decoder, test_loader, criterion, tensorboard_writer, device='c
                 output_decomposed = encoder(dry_audio_decomposed)
                 wet_audio_decomposed = wet_audio_decomposed[..., rf:]
 
-            output = pqmf.inverse(output_decomposed)
-            dry = pqmf.inverse(dry_audio_decomposed)
-            wet = pqmf.inverse(wet_audio_decomposed)
+            if n_bands > 1:
+                output = pqmf.inverse(output_decomposed)
+                dry = pqmf.inverse(dry_audio_decomposed)
+                wet = pqmf.inverse(wet_audio_decomposed)
 
             # Compute loss
             loss = criterion(output, wet)
