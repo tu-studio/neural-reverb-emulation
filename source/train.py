@@ -8,6 +8,7 @@ from network.training import train
 from network.testing import test
 from network.dataset import AudioDataset
 from network.metrics import spectral_distance
+from network.CombinedModels import CombinedEncoderDecoder
 from utils import logs, config
 from pathlib import Path
 import math
@@ -87,9 +88,11 @@ def main():
         print("Random skips shape: ", [i.shape for i in random_skips])
         torchinfo.summary(decoder, input_data=[x, random_skips], device=device)
 
-        # Add the model graphs to the tensorboard logs
-        writer.add_graph(encoder, random_input.to(device))
-        writer.add_graph(decoder, [x.to(device), [skip.to(device) for skip in random_skips]])
+       combined_model = CombinedEncoderDecoder(encoder, decoder)
+
+        # Add the combined model graph to TensorBoard
+        random_input = torch.randn(1, n_bands, int(2**math.ceil(math.log2(input_size))/n_bands))
+        writer.add_graph(combined_model, random_input.to(device))
 
         # Setup optimizer
         model_params = list(encoder.parameters())

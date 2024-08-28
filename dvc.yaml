@@ -31,6 +31,7 @@ stages:
     - source/network/testing.py
     - source/network/ravepqmf.py
     - source/network/tcn.py
+    - source/network/CombinedModels.py
     - data/processed/
     params:
     - general.random_seed
