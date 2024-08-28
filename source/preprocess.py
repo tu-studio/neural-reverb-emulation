@@ -190,7 +190,7 @@ def agglomerate_short_segments(short_directory, dry_directory, model_chunk_size)
                     agglomerated = agglomerate_segments(short_segments, model_chunk_size)
                     agglomerated_file_name = f"agglomerated_{agglomerated_count}.wav"
                     agglomerated_path = os.path.join(dry_directory, agglomerated_file_name)
-                    with AudioFile(agglomerated_path, 'w', CONFIG['SAMPLE_RATE'], num_channels) as f:
+                    with AudioFile(agglomerated_path, 'w', params["general"]["sample_rate"], num_channels) as f:
                         f.write(agglomerated)
                     agglomerated_count += 1
                     short_segments = []
@@ -210,7 +210,7 @@ def apply_wet_processing(dry_directory, wet_directory, board):
                 # manage clipping
                 audio = normalize_audio(audio)
 
-                wet_audio = process_audio_with_reverb(audio, board, sample_rate, CONFIG['BOARD_CHUNK_SIZE'])
+                wet_audio = process_audio_with_reverb(audio, board, sample_rate, params["preprocess"]["board_chunk_size"])
                 wet_audio = normalize_audio(wet_audio)
                 
                 wet_file_path = os.path.join(wet_directory, file_name)
@@ -230,8 +230,8 @@ def explore_directory(directory, extension=".wav"):
 def save_data_to_pt():
     if not os.path.exists('data/processed'):
         os.mkdir('data/processed')   
-    dry_directory = CONFIG['DRY_OUTPUT_DIRECTORY']
-    wet_directory = CONFIG['WET_OUTPUT_DIRECTORY']
+    dry_directory = params["preprocess"]["dry_output_directory"]
+    wet_directory = params["preprocess"]["wet_output_directory"]
 
     dry_audio_files = explore_directory(dry_directory)
     wet_audio_files = explore_directory(wet_directory)
@@ -247,10 +247,10 @@ def main():
     print(f"Max tail length: {max_tail_length}")
 
     # 1. Define Chunk size
-    if params["preprocess"]["input_size"] < max_tail_length:
+    if params["general"]["input_size"] < max_tail_length:
         raise ValueError("Model input size must be greater or equal to the max tail length")
 
-    model_chunk_size = params["preprocess"]["input_size"]
+    model_chunk_size = params["general"]["input_size"]
    
     # 2. Truncate data to the model and 3. apply zero padding
     process_files(params["preprocess"]["input_directory"], max_tail_length, model_chunk_size, 
