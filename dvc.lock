@@ -5,14 +5,14 @@ stages:
     deps:
     - path: data/processed/
       hash: md5
-      md5: 64793a00435610abbcd24e02ea03773f.dir
+      md5: 22b4026dfc1ab28224e5d9854bb223f9.dir
       size: 743300167
       nfiles: 3
     - path: source/network/
       hash: md5
-      md5: 942bd26cda89270c31ff21160032bc27.dir
-      size: 32837
-      nfiles: 8
+      md5: f6ee8ac6672b5c0a0f2b5534277083e5.dir
+      size: 76797
+      nfiles: 16
     - path: source/network/dataset.py
       hash: md5
       md5: 6a33e657139e21b977f4d2deb79bf1e4
@@ -31,35 +31,48 @@ stages:
       size: 2163
     - path: source/network/testing.py
       hash: md5
-      md5: 1cf9d854e6a32543876daf71a03c7b6d
-      size: 3701
+      md5: 165cabc7a0cf4556719c5dbc8b6ade7b
+      size: 3806
     - path: source/network/training.py
       hash: md5
-      md5: ec1ccb91860e86a33d31c98bd7fd39bf
-      size: 8642
+      md5: 49185f33197e1b9273389446f1c9e0b2
+      size: 8864
     - path: source/train.py
       hash: md5
       md5: daa0fbad12ff76b65ba3c06b920a759b
       size: 7251
     params:
       params.yaml:
-        general.input_size: 524288
+        general.input_size: 508032
         general.random_seed: 55
         general.sample_rate: 44100
-        train.batch_size: 32
+        train.batch_size: 2
         train.device_request: cuda
-        train.dilation_growth: 9
+        train.dilation_growth: 10
         train.epochs: 1
         train.input_file: data/processed/preprocessed_data.pt
-        train.kernel_size: 32
+        train.kernel_size: 13
         train.latent_dim: 128
         train.lr: 0.001
         train.n_bands: 16
-        train.n_blocks: 3
+        train.n_blocks: 4
         train.n_channels: 32
         train.n_inputs: 1
         train.name: model
         train.scheduler_rate: 0.1
         train.use_kl: false
         train.use_skip: true
-        train.use_tcn: false
+        train.use_tcn: true
+  save_logs:
+    cmd: python3 source/utils/logs.py
+    outs:
+    - path: exp_logs/slurm
+      hash: md5
+      md5: c43a5e8289db06d7698cb68f559cb865.dir
+      size: 51293919
+      nfiles: 44
+    - path: exp_logs/tensorboard
+      hash: md5
+      md5: e80e634433e36e6cdf31008cf6321d43.dir
+      size: 0
+      nfiles: 1
