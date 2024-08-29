@@ -25,7 +25,7 @@ train:
   batch_size: 2
   kernel_size: 13
   n_blocks: 4
-  dilation_growth: 10
+  dilation_growth: 2
   n_channels: 32
   lr: 0.001
   use_kl: false
