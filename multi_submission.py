@@ -24,7 +24,7 @@ def submit_batch_job(n_bands, use_spectral_loss):
                        f"-S train.n_blocks={n_blocks} "
                        f"-S train.kernel_size={kernel_size} "
                        f"-S train.dilation_growth={dilation_growth} "
-                       f"-S train.use_spectral_loss={str(use_spectral_loss).lower()}")
+                       f"-S train.use_spectral={str(use_spectral_loss).lower()}")
     }
     subprocess.run(['/usr/bin/bash', '-c', 'sbatch slurm_job.sh'], env=env)
 
