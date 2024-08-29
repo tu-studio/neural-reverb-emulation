@@ -1,7 +1,7 @@
 # TODO
 
 - Replace the CONFIG structure in preprocess with the default params[...][...]. --> Done
-- Add metrics logging --> ?
+- Add metrics logging --> Done -- check behaviour
 - Make summary nicer --> ?
 - Find out how trigger workflow runs with tags or path changes --> ? 
 - Rename and split training loop and evaluation loop --> Done
@@ -12,5 +12,5 @@
 - put the params of the scheduler iinto params.yaml --> Done
 - print the graph --> Done
 - Add TCN --> Done
-- Print Encoder and Decoder together
+- Print Encoder and Decoder together --> Done
 - don't add dry to the loss --> Done
