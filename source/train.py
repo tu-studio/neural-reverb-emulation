@@ -35,8 +35,9 @@ def main():
     scheduler_rate = params["train"]["scheduler_rate"]
     use_skip = params["train"]["use_skip"]
     use_tcn = params["train"]["use_tcn"]
+    use_spectral = params["train"]["use_spectral"]
+    use_pqmf = params["train"]["use_pqmf"]
 
-    print(use_tcn)
 
     # Create a SummaryWriter object to write the tensorboard logs
     tensorboard_path = logs.return_tensorboard_path()
@@ -47,6 +48,9 @@ def main():
     config.set_random_seeds(random_seed)
     # Prepare the requested device for training. Use cpu if the requested device is not available 
     device = config.prepare_device(device_request)
+
+    if not use_pqmf:
+        n_bands = 1
 
     # Build the model
     if not use_tcn:
@@ -118,8 +122,10 @@ def main():
         model_params = list(model.parameters())
 
     # setup loss function, optimizer, and scheduler
-    criterion = spectral_distance
-    criterion = torch.nn.MSELoss()
+    if use_spectral:       
+        criterion = spectral_distance
+    else:
+        criterion = torch.nn.MSELoss()
 
     # Setup optimizer
     optimizer = torch.optim.Adam(model_params, lr, (0.5, 0.9))
