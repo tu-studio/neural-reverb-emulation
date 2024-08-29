@@ -39,6 +39,8 @@ def main():
     use_spectral = params["train"]["use_spectral"]
     use_pqmf = params["train"]["use_pqmf"]
 
+    final_size = calculate_final_input_size(input_size, n_bands, dilation_growth, n_blocks, kernel_size)
+    print("final size = ", final_size)
 
     # Create a SummaryWriter object to write the tensorboard logs
     tensorboard_path = logs.return_tensorboard_path()
