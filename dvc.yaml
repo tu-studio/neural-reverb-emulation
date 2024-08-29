@@ -33,6 +33,7 @@ stages:
     - source/network/tcn.py
     - source/network/CombinedModels.py
     - source/network/tcnblocktraining.py
+    - source/network/latent.py
     - data/processed/
     params:
     - general.random_seed

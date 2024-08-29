@@ -9,6 +9,7 @@ from network.testing import test
 from network.dataset import AudioDataset
 from network.metrics import spectral_distance
 from network.CombinedModels import CombinedEncoderDecoder
+from network.latent import calculate_final_input_size
 from utils import logs, config
 from pathlib import Path
 import math
