@@ -113,18 +113,24 @@ def train(encoder, decoder, train_loader, val_loader, criterion, optimizer, sche
             train_avg_epoch_kl_div = train_epoch_kl_div / len(train_loader)
 
         # Log loss
-        tensorboard_writer.add_scalar("Loss/ training loss", train_avg_epoch_loss, epoch)
-        tensorboard_writer.add_scalar("Loss/ training criterion", train_avg_epoch_loss_criterion, epoch)
-        if use_kl:
-            tensorboard_writer.add_scalar("Loss/training kl_div", train_avg_epoch_kl_div, epoch)
-        if decoder:
-            for i, alpha in enumerate(decoder.get_alpha_values()):
-                tensorboard_writer.add_scalar(f"Alpha/Block_{i}", alpha, epoch)
-        # Log audio samples
-        tensorboard_writer.add_audio("Audio/TCN_Input", dry_audio[0].cpu(), epoch, sample_rate=sample_rate)
-        tensorboard_writer.add_audio("Audio/TCN_Target", wet_audio[0].cpu(), epoch, sample_rate=sample_rate)
-        tensorboard_writer.add_audio("Audio/TCN_output", output[0].cpu(), epoch, sample_rate=sample_rate)
-        tensorboard_writer.step()
+        if epoch % 5 == 0 :
+            tensorboard_writer.add_scalar("Loss/ training loss", train_avg_epoch_loss, epoch)
+            tensorboard_writer.add_scalar("Loss/ training criterion", train_avg_epoch_loss_criterion, epoch)
+            if use_kl:
+                tensorboard_writer.add_scalar("Loss/training kl_div", train_avg_epoch_kl_div, epoch)
+            if decoder:
+                for i, alpha in enumerate(decoder.get_alpha_values()):
+                    tensorboard_writer.add_scalar(f"Alpha/Block_{i}", alpha, epoch)
+            # Log audio samples
+            if decoder:
+                tensorboard_writer.add_audio("Audio/TCN_Input", dry_audio[0].cpu(), epoch, sample_rate=sample_rate)
+                tensorboard_writer.add_audio("Audio/TCN_Target", wet_audio[0].cpu(), epoch, sample_rate=sample_rate)
+                tensorboard_writer.add_audio("Audio/TCN_output", output[0].cpu(), epoch, sample_rate=sample_rate)
+            else:
+                tensorboard_writer.add_audio("Audio/AE_Input", dry_audio[0].cpu(), epoch, sample_rate=sample_rate)
+                tensorboard_writer.add_audio("Audio/AE_Target", wet_audio[0].cpu(), epoch, sample_rate=sample_rate)
+                tensorboard_writer.add_audio("Audio/AE_output", output[0].cpu(), epoch, sample_rate=sample_rate)
+            tensorboard_writer.step()
 
         
 
