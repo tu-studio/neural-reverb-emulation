@@ -17,20 +17,20 @@ train:
   input_file: data/processed/preprocessed_data.pt
   name: model
   scheduler_rate: 0.1
-  device_request: 'cuda'
+  device_request: cuda
   n_inputs: 1
-  n_bands: 1
+  n_bands: 8
   latent_dim: 128
   epochs: 1000
   batch_size: 2
-  kernel_size: 13
-  n_blocks: 4
-  dilation_growth: 10
+  kernel_size: 6
+  n_blocks: 2
+  dilation_growth: 3
   n_channels: 32
   lr: 0.001
   use_kl: false
   use_skip: true
   use_tcn: false
-  use_spectral: false
+  use_spectral: true
   use_pqmf: true
 
