@@ -30,7 +30,7 @@ train:
   lr: 0.001
   use_kl: false
   use_skip: true
-  use_tcn: false
+  use_tcn: true
   use_spectral: false
   use_pqmf: true
 

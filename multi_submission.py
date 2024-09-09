@@ -29,7 +29,7 @@ def submit_batch_job(n_bands, use_spectral_loss):
     subprocess.run(['/usr/bin/bash', '-c', 'sbatch slurm_job.sh'], env=env)
 
 if __name__ == "__main__":
-    n_bands_list = [1, 4, 8, 16]
+    n_bands_list = [1]
     use_spectral_loss_list = [True, False]
     
     for n_bands, use_spectral_loss in itertools.product(n_bands_list, use_spectral_loss_list):
