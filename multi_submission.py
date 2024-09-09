@@ -1,22 +1,50 @@
 import itertools
 import subprocess
-import os 
+import os
+import math
 
-def calculate_hyperparams(n_bands):
-    # Base values for n_bands = 1
+def calculate_final_input_size(input_size, n_bands, dilation_growth, n_blocks, kernel_size):
+    # Step 1: Pad input to next power of 2
+    if n_bands > 1:
+        padded_input_size = 2 ** math.ceil(math.log2(input_size))
+    else:
+        padded_input_size = input_size
+        
+    # Step 2: Apply PQMF
+    pqmf_size = padded_input_size // n_bands
+    
+    # Step 3: Calculate TCN receptive field
+    rf = kernel_size - 1
+    for i in range(1, n_blocks):
+        dilation = dilation_growth ** i
+        rf += (kernel_size - 1) * dilation
+    
+    # Step 4: Calculate final output size
+    final_size = pqmf_size - rf
+    
+    return final_size
+
+def generate_hyperparams():
     base_n_blocks = 4
     base_kernel_size = 13
     base_dilation_growth = 10
     
-    # Scale hyperparameters based on n_bands
-    n_blocks = max(2, base_n_blocks - (n_bands - 1) // 2)  # Decrease n_blocks as n_bands increases
-    kernel_size = max(3, base_kernel_size - (n_bands - 1))  # Decrease kernel_size as n_bands increases
-    dilation_growth = max(2, base_dilation_growth - (n_bands - 1))  # Decrease dilation_growth as n_bands increases
+    n_blocks_range = range(max(1, base_n_blocks - 1), base_n_blocks + 1)
+    kernel_size_range = range(max(3, base_kernel_size - 4), base_kernel_size + 5, 2)
+    dilation_growth_range = range(max(2, base_dilation_growth - 2), base_dilation_growth + 2)
     
-    return n_blocks, kernel_size, dilation_growth
+    for n_blocks, kernel_size, dilation_growth in itertools.product(n_blocks_range, kernel_size_range, dilation_growth_range):
+        yield n_blocks, kernel_size, dilation_growth
 
-def submit_batch_job(n_bands, use_spectral_loss):
-    n_blocks, kernel_size, dilation_growth = calculate_hyperparams(n_bands)
+def submit_batch_job(n_blocks, kernel_size, dilation_growth, use_spectral_loss):
+    input_size = 508032  # From params.yaml
+    n_bands = 1  # Fixed as per request
+    
+    final_size = calculate_final_input_size(input_size, n_bands, dilation_growth, n_blocks, kernel_size)
+    
+    if final_size <= 0:
+        print(f"Skipping invalid configuration: n_blocks={n_blocks}, kernel_size={kernel_size}, dilation_growth={dilation_growth}")
+        return
     
     env = {
         **os.environ,
@@ -27,10 +55,11 @@ def submit_batch_job(n_bands, use_spectral_loss):
                        f"-S train.use_spectral={str(use_spectral_loss).lower()}")
     }
     subprocess.run(['/usr/bin/bash', '-c', 'sbatch slurm_job.sh'], env=env)
+    print(f"Submitted job: n_blocks={n_blocks}, kernel_size={kernel_size}, dilation_growth={dilation_growth}, use_spectral={use_spectral_loss}")
 
 if __name__ == "__main__":
-    n_bands_list = [1]
-    use_spectral_loss_list = [True, False]
+    use_spectral_loss_list = [False]
     
-    for n_bands, use_spectral_loss in itertools.product(n_bands_list, use_spectral_loss_list):
-        submit_batch_job(n_bands, use_spectral_loss)
+    for n_blocks, kernel_size, dilation_growth in generate_hyperparams():
+        for use_spectral_loss in use_spectral_loss_list:
+            submit_batch_job(n_blocks, kernel_size, dilation_growth, use_spectral_loss)
