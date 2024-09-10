@@ -7,7 +7,7 @@ from network.tcn import TCN
 from network.training import train
 from network.testing import test
 from network.dataset import AudioDataset
-from network.metrics import spectral_distance, single_stft_loss
+from network.metrics import spectral_distance, single_stft_loss, fft_loss
 from network.CombinedModels import CombinedEncoderDecoder
 from network.latent import calculate_final_input_size
 from utils import logs, config
@@ -127,7 +127,8 @@ def main():
     # setup loss function, optimizer, and scheduler
     if use_spectral:       
         # criterion = spectral_distance
-        criterion = single_stft_loss
+        # criterion = single_stft_loss
+        criterion = fft_loss
     else:
         criterion = torch.nn.MSELoss()
 
