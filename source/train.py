@@ -3,6 +3,7 @@ import torchinfo
 from torch.utils.data import  random_split, DataLoader
 from network.encoder import EncoderTCN
 from network.decoder import DecoderTCN
+from network.discriminator import Discriminator
 from network.tcn import TCN
 from network.training import train
 from network.testing import test
@@ -54,6 +55,9 @@ def main():
 
     if not use_pqmf:
         n_bands = 1
+
+    discriminator = Discriminator().to(device)
+    d_optimizer = optim.Adam(discriminator.parameters(), lr=0.0002, betas=(0.5, 0.999))
 
     # Build the model
     if not use_tcn:
@@ -127,8 +131,8 @@ def main():
     # setup loss function, optimizer, and scheduler
     if use_spectral:       
         # criterion = spectral_distance
-        # criterion = single_stft_loss
-        criterion = fft_loss
+        criterion = single_stft_loss
+        # criterion = fft_loss
     else:
         criterion = torch.nn.MSELoss()
 
