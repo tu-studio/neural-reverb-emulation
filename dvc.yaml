@@ -59,6 +59,7 @@ stages:
     - train.use_tcn
     - train.use_spectral
     - train.use_pqmf
+    - train.use_adversarial
   #   outs:
   #   - model/checkpoints/
   # export:

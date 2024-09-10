@@ -185,9 +185,9 @@ def main():
 
     # Modify the training and testing calls to work with both model types
     if not use_tcn:
-        train(encoder, decoder, train_loader, val_loader, criterion, optimizer, scheduler,
+        train(encoder, decoder, discriminator,train_loader, val_loader, criterion, optimizer, d_, scheduler,
               tensorboard_writer=writer, num_epochs=n_epochs, device=device,
-              n_bands=n_bands, use_kl=use_kl, sample_rate=sample_rate)
+              n_bands=n_bands, use_kl=use_kl, use_adversarial=use_adversarial,sample_rate=sample_rate)
         
         test(encoder, decoder, test_loader, criterion, writer, device, n_bands, use_kl, sample_rate)
         

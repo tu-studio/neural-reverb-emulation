@@ -7,7 +7,7 @@ from utils import config
 import os
 from tqdm import tqdm
 
-def train(encoder, decoder, train_loader, val_loader, criterion, optimizer, scheduler, tensorboard_writer, num_epochs=25, device='cpu', n_bands=64, use_kl=False, sample_rate=44100):
+def train(encoder, decoder, discriminator, train_loader, val_loader, criterion, optimizer, d_optimizer, scheduler, tensorboard_writer, num_epochs=25, device='cpu', n_bands=64, use_kl=False, use_adversarial=False, sample_rate=44100):
     encoder.to(device)
     if decoder:
         decoder.to(device)
@@ -215,6 +215,79 @@ def train(encoder, decoder, train_loader, val_loader, criterion, optimizer, sche
         tensorboard_writer.add_audio("Audio/Val_Input", dry_audio[0].cpu(), epoch, sample_rate=sample_rate)
         tensorboard_writer.add_audio("Audio/Val_Target", wet_audio[0].cpu(), epoch, sample_rate=sample_rate)
         tensorboard_writer.add_audio("Audio/Val_Output", output[0].cpu(), epoch, sample_rate=sample_rate)
+
+    if use_adversarial:
+        # Freeze the encoder
+        for param in encoder.parameters():
+            param.requires_grad = False
+
+        for epoch in range(num_epcohs):
+            # Initialize additional loss tracking variables
+            train_epoch_d_loss = 0
+            train_epoch_g_loss = 0
+            train_epoch_rec_loss = 0
+            train_epoch_feature_matching_loss = 0
+
+            for batch, (dry_audio, wet_audio) in enumerate(train_loader):
+                dry_audio = dry_audio.to(device)
+                wet_audio = wet_audio.to(device)
+
+                # Train discriminator
+                d_optimizer.zero_grad()
+
+                # Real samples
+                real_output, real_features = discriminator(wet_audio)
+                d_loss_real = torch.mean((real_output - 1)**2)
+
+                # Fake samples
+                with torch.no_grad():
+                    if use_kl:
+                        mu, logvar, encoder_outputs = encoder(dry_audio_decomposed)
+                        z = encoder.reparameterize(mu, logvar)
+                    else:
+                        encoder_outputs = encoder(dry_audio_decomposed)
+                        z = encoder_outputs.pop()
+                    encoder_outputs = encoder_outputs[::-1]
+
+                output_decomposed = decoder(z, encoder_outputs)
+                if n_bands > 1:
+                    output = pqmf.inverse(output_decomposed)
+                else:
+                    output = output_decomposed
+
+                fake_output, fake_features = discriminator(output.detach())
+                d_loss_fake = torch.mean(fake_output**2)
+
+                d_loss = (d_loss_real + d_loss_fake) * 0.5
+                d_loss.backward()
+                d_optimizer.step()
+
+                # Train decoder
+                optimizer.zero_grad()
+                g_output, g_features = discriminator(output)
+                g_loss = torch.mean((g_output - 1)**2)
+
+                # Reconstruction loss
+                rec_loss = criterion(output, wet)
+
+                # Feature matching loss
+                feature_matching_loss = 0
+                for real_feat, fake_feat in zip(real_features, g_features):
+                    feature_matching_loss += torch.mean(torch.abs(real_feat - fake_feat))
+
+                # Combine losses
+                loss = rec_loss + g_loss + feature_matching_loss * 10  # Adjust weights as needed
+
+                loss.backward()
+                optimizer.step()
+
+                # Update loss tracking
+                train_epoch_loss += loss.item()
+                train_epoch_d_loss += d_loss.item()
+                train_epoch_g_loss += g_loss.item()
+                train_epoch_rec_loss += rec_loss.item()
+                train_epoch_feature_matching_loss += feature_matching_loss.item()
+
 
     progress_bar.close()
     tensorboard_writer.flush()

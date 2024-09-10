@@ -33,4 +33,5 @@ train:
   use_tcn: false
   use_spectral: true
   use_pqmf: true
+  use_adversarial: true
 
