@@ -14,3 +14,4 @@
 - Add TCN --> Done
 - Print Encoder and Decoder together --> Done
 - don't add dry to the loss --> Done
+- Only one scale STFT (2048) or one FFT (size of input) and only lin or log

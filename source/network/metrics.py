@@ -44,3 +44,19 @@ def spectral_distance(x, y, scales = [2048, 1024, 512, 256, 128]):
     log = sum(list(map(log_distance, x, y)))
 
     return lin + log
+
+def single_stft_loss(x, y, scale=2048, overlap=0.75):
+    """
+    Compute loss using a single STFT at scale 2048 and linear distance.
+    """
+    x_stft = multiscale_stft(x, [scale], overlap)[0]
+    y_stft = multiscale_stft(y, [scale], overlap)[0]
+    return lin_distance(x_stft, y_stft)
+
+def fft_loss(x, y):
+    """
+    Compute loss using a single FFT and linear distance.
+    """
+    x_fft = torch.fft.fft(x)
+    y_fft = torch.fft.fft(y)
+    return lin_distance(x_fft.abs(), y_fft.abs())
