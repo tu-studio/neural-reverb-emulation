@@ -221,6 +221,9 @@ def train(encoder, decoder, discriminator, train_loader, val_loader, criterion, 
         for param in encoder.parameters():
             param.requires_grad = False
 
+         # Create a progress bar for the entire training process
+        progress_bar = tqdm(total=total_batches, desc="Training Progress")
+
         for epoch in range(num_epochs):
             # Initialize additional loss tracking variables
             train_epoch_d_loss = 0
@@ -231,9 +234,6 @@ def train(encoder, decoder, discriminator, train_loader, val_loader, criterion, 
             for batch, (dry_audio, wet_audio) in enumerate(train_loader):
                 dry_audio = dry_audio.to(device)
                 wet_audio = wet_audio.to(device)
-
-                # Pad and decompose audio if necessary (as in the previous training loop)
-                # ...
 
                 # Train discriminator
                 d_optimizer.zero_grad()
@@ -281,8 +281,8 @@ def train(encoder, decoder, discriminator, train_loader, val_loader, criterion, 
                 # Combine losses
                 loss = rec_loss + g_loss + feature_matching_loss * 10  # Adjust weights as needed
 
-                loss.backward()
-                optimizer.step()
+                # loss.backward()
+                # optimizer.step()
 
                 # Update loss tracking
                 train_epoch_loss += loss.item()

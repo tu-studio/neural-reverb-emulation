@@ -39,6 +39,7 @@ def main():
     use_tcn = params["train"]["use_tcn"]
     use_spectral = params["train"]["use_spectral"]
     use_pqmf = params["train"]["use_pqmf"]
+    use_adversarial = params["train"]["use_adversarial"]
 
     final_size = calculate_final_input_size(input_size, n_bands, dilation_growth, n_blocks, kernel_size)
     print("final size = ", final_size)
@@ -57,7 +58,7 @@ def main():
         n_bands = 1
 
     discriminator = Discriminator().to(device)
-    d_optimizer = optim.Adam(discriminator.parameters(), lr=0.0002, betas=(0.5, 0.999))
+    d_optimizer = torch.optim.Adam(discriminator.parameters(), lr=0.0002, betas=(0.5, 0.999))
 
     # Build the model
     if not use_tcn:
@@ -185,7 +186,7 @@ def main():
 
     # Modify the training and testing calls to work with both model types
     if not use_tcn:
-        train(encoder, decoder, discriminator,train_loader, val_loader, criterion, optimizer, d_, scheduler,
+        train(encoder, decoder, discriminator,train_loader, val_loader, criterion, optimizer, d_optimizer, scheduler,
               tensorboard_writer=writer, num_epochs=n_epochs, device=device,
               n_bands=n_bands, use_kl=use_kl, use_adversarial=use_adversarial,sample_rate=sample_rate)
         
