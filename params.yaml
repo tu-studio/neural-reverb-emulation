@@ -31,6 +31,6 @@ train:
   use_kl: false
   use_skip: true
   use_tcn: false
-  use_spectral: false
+  use_spectral: true
   use_pqmf: true
 
