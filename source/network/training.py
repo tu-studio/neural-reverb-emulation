@@ -216,6 +216,8 @@ def train(encoder, decoder, discriminator, train_loader, val_loader, criterion, 
         tensorboard_writer.add_audio("Audio/Val_Target", wet_audio[0].cpu(), epoch, sample_rate=sample_rate)
         tensorboard_writer.add_audio("Audio/Val_Output", output[0].cpu(), epoch, sample_rate=sample_rate)
 
+    progress_bar.close()
+
     if use_adversarial:
         # Freeze the encoder
         for param in encoder.parameters():
