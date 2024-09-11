@@ -11,15 +11,15 @@ train:
   n_bands: 1
   latent_dim: 64
   epochs: 500
-  batch_size: 4
+  batch_size: 2
   kernel_size: 7
   n_blocks: 5
   dilation_growth: 3
   n_channels: 128
   lr: 0.0001
-  use_kl: true
+  use_kl: false
   use_skip: true
   use_tcn: false
-  use_spectral: true
+  use_spectral: false
   use_pqmf: true
   use_adversarial: true
