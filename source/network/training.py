@@ -218,6 +218,7 @@ def train(encoder, decoder, discriminator, train_loader, val_loader, criterion, 
 
     progress_bar.close()
 
+    gan_loss = "hinge"
     if use_adversarial:
         # Freeze the encoder
         for param in encoder.parameters():
@@ -227,22 +228,17 @@ def train(encoder, decoder, discriminator, train_loader, val_loader, criterion, 
         progress_bar = tqdm(total=total_batches, desc="Discri Progress")
 
         for epoch in range(num_epochs):
-            # Initialize additional loss tracking variables
-            train_epoch_d_loss = 0
-            train_epoch_g_loss = 0
-            train_epoch_rec_loss = 0
-            train_epoch_feature_matching_loss = 0
-
             for batch, (dry_audio, wet_audio) in enumerate(train_loader):
                 dry_audio = dry_audio.to(device)
                 wet_audio = wet_audio.to(device)
-
+                
+            
                 # Train discriminator
                 d_optimizer.zero_grad()
+                optimizer.zero_grad()
 
                 # Real samples
                 real_output, real_features = discriminator(wet_audio)
-                d_loss_real = torch.mean((real_output - 1)**2)
 
                 # Fake samples
                 with torch.no_grad():
@@ -261,73 +257,43 @@ def train(encoder, decoder, discriminator, train_loader, val_loader, criterion, 
                     output = output_decomposed
 
                 fake_output, fake_features = discriminator(output.detach())
-                d_loss_fake = torch.mean(fake_output**2)
 
-                d_loss = (d_loss_real + d_loss_fake) * 0.5
-                d_loss.backward()
-                d_optimizer.step()
+                #distance
+                distance = criterion(output, wet_audio)
 
-                # Train decoder
-                optimizer.zero_grad()
-                g_output, g_features = discriminator(output)
-                g_loss = torch.mean((g_output - 1)**2)
+                # compute the different lossses
+                discriminator_loss = 0
+                generator_loss = 0
+                feature_matching_distance = 0
+                for feature_true, feature_fake in zip(real_features, fake_features):
+                    feature_matching_distance = feature_matching_distance +  5*sum(
+                            map(
+                                lambda x, y: abs(x - y).mean(),
+                                feature_true,
+                                feature_fake,
+                            )) / len(feature_fake)
+                    if gan_loss == "hinge":
+                        discriminator_loss += (torch.relu(1 - feature_true[-1]) + torch.relu(1+feature_fake[-1])).mean()
+                        generator_loss -= (feature_fake[-1]).mean()
+                    elif gan_loss == "square":
+                        discriminator_loss += ((feature_true[-1] - 1).pow(2) + (feature_fake[-1]).pow(2)).mean()
+                        generator_loss += (feature_fake[-1] - 1).pow(2).mean()
 
-                # Reconstruction loss
-                rec_loss = criterion(output, wet)
-
+                generator_loss = generator_loss + distance + feature_matching_distance
                 
-
-                # Feature matching loss
-                feature_matching_loss = 0
-                # for real_feat, fake_feat in zip(real_features, g_features):
-                #     print(len(fake_feat))
-                #     print(len(real_feat))
-                #     feature_matching_loss += torch.mean(torch.abs(real_feat - fake_feat))
-
-                # Combine losses
-                loss = rec_loss + g_loss + feature_matching_loss * 10  # Adjust weights as needed
-
-                # loss.backward()
-                # optimizer.step()
-
-                # Update loss tracking
-                train_epoch_loss += loss.item()
-                train_epoch_d_loss += d_loss.item()
-                train_epoch_g_loss += g_loss.item()
-                train_epoch_rec_loss += rec_loss.item()
-                # train_epoch_feature_matching_loss += feature_matching_loss.item()
+                # train the discriminator and generator alternatively
+                if epoch % 2 == 0:
+                    d_optimizer.zero_grad()
+                    discriminator_loss.backward()
+                    d_optimizer.step()
+                else:
+                    optimizer.zero_grad()
+                    generator_loss_total.backward()
+                    optimizer.step()
 
                 # Update progress bar
                 progress_bar.update(1)
                 progress_bar.set_postfix({'epoch': f'{epoch + 1}/{num_epochs}', 'loss': f'{loss.item():.4f}'})
-
-            # Calculate average losses
-            train_avg_epoch_loss = train_epoch_loss / len(train_loader)
-            train_avg_epoch_d_loss = train_epoch_d_loss / len(train_loader)
-            train_avg_epoch_g_loss = train_epoch_g_loss / len(train_loader)
-            train_avg_epoch_rec_loss = train_epoch_rec_loss / len(train_loader)
-            train_avg_epoch_feature_matching_loss = train_epoch_feature_matching_loss / len(train_loader)
-
-            # Print losses
-            print(f"Epoch {epoch + 1}/{num_epochs}")
-            print(f"Total Loss: {train_avg_epoch_loss:.4f}")
-            print(f"Discriminator Loss: {train_avg_epoch_d_loss:.4f}")
-            print(f"Generator Loss: {train_avg_epoch_g_loss:.4f}")
-            print(f"Reconstruction Loss: {train_avg_epoch_rec_loss:.4f}")
-            print(f"Feature Matching Loss: {train_avg_epoch_feature_matching_loss:.4f}")
-
-            # Log losses to TensorBoard
-            if epoch % 5 == 0:
-                tensorboard_writer.add_scalar("Adversarial/Total Loss", train_avg_epoch_loss, epoch)
-                tensorboard_writer.add_scalar("Adversarial/Discriminator Loss", train_avg_epoch_d_loss, epoch)
-                tensorboard_writer.add_scalar("Adversarial/Generator Loss", train_avg_epoch_g_loss, epoch)
-                tensorboard_writer.add_scalar("Adversarial/Reconstruction Loss", train_avg_epoch_rec_loss, epoch)
-                tensorboard_writer.add_scalar("Adversarial/Feature Matching Loss", train_avg_epoch_feature_matching_loss, epoch)
-
-                # Log audio samples
-                tensorboard_writer.add_audio("Adversarial/Input", dry_audio[0].cpu(), epoch, sample_rate=sample_rate)
-                tensorboard_writer.add_audio("Adversarial/Target", wet_audio[0].cpu(), epoch, sample_rate=sample_rate)
-                tensorboard_writer.add_audio("Adversarial/Output", output[0].cpu(), epoch, sample_rate=sample_rate)
 
 
 
