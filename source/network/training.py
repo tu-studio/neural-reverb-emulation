@@ -219,7 +219,7 @@ def train(encoder, decoder, discriminator, train_loader, val_loader, criterion, 
     progress_bar.close()
 
     gan_loss = "hinge"
-    if use_adversarial:
+    if use_adversarial and not use_tcn:
         # Freeze the encoder
         for param in encoder.parameters():
             param.requires_grad = False
