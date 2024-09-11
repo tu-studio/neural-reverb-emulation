@@ -132,8 +132,8 @@ def main():
     # setup loss function, optimizer, and scheduler
     if use_spectral:       
         # criterion = spectral_distance
-        criterion = single_stft_loss
-        # criterion = fft_loss
+        # criterion = single_stft_loss
+        criterion = fft_loss
     else:
         criterion = torch.nn.MSELoss()
 
