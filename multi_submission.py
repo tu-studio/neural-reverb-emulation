@@ -29,10 +29,6 @@ def generate_hyperparams():
     kernel_size = 13
     dilation_growth = 10
     
-    n_blocks_range = range(max(1, base_n_blocks - 1), base_n_blocks + 1)
-    kernel_size_range = range(max(3, base_kernel_size - 4), base_kernel_size + 5, 2)
-    dilation_growth_range = range(max(2, base_dilation_growth - 2), base_dilation_growth + 2)
-    
     # Add boolean options for the new parameters
     use_kl_options = [True, False]
     use_spectral_options = [True, False]
