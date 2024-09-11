@@ -25,18 +25,26 @@ def calculate_final_input_size(input_size, n_bands, dilation_growth, n_blocks, k
     return final_size
 
 def generate_hyperparams():
-    base_n_blocks = 4
-    base_kernel_size = 13
-    base_dilation_growth = 10
+    n_blocks = 4
+    kernel_size = 13
+    dilation_growth = 10
     
     n_blocks_range = range(max(1, base_n_blocks - 1), base_n_blocks + 1)
     kernel_size_range = range(max(3, base_kernel_size - 4), base_kernel_size + 5, 2)
     dilation_growth_range = range(max(2, base_dilation_growth - 2), base_dilation_growth + 2)
     
-    for n_blocks, kernel_size, dilation_growth in itertools.product(n_blocks_range, kernel_size_range, dilation_growth_range):
-        yield n_blocks, kernel_size, dilation_growth
+    # Add boolean options for the new parameters
+    use_kl_options = [True, False]
+    use_spectral_options = [True, False]
+    use_adversarial_options = [True, False]
+    use_skips_options = [True, False]
 
-def submit_batch_job(n_blocks, kernel_size, dilation_growth, use_spectral_loss):
+    for use_kl, use_spectral, use_adversarial, use_skips in itertools.product(
+        use_kl_options, use_spectral_options, use_adversarial_options, use_skips_options
+    ):
+        yield n_blocks, kernel_size, dilation_growth, use_kl, use_spectral, use_adversarial, use_skips
+
+def submit_batch_job(n_blocks, kernel_size, dilation_growth, use_kl, use_spectral, use_adversarial, use_skips):
     input_size = 508032  # From params.yaml
     n_bands = 1  # Fixed as per request
     
@@ -52,14 +60,15 @@ def submit_batch_job(n_blocks, kernel_size, dilation_growth, use_spectral_loss):
                        f"-S train.n_blocks={n_blocks} "
                        f"-S train.kernel_size={kernel_size} "
                        f"-S train.dilation_growth={dilation_growth} "
-                       f"-S train.use_spectral={str(use_spectral_loss).lower()}")
+                       f"-S train.use_kl={str(use_kl).lower()} "
+                       f"-S train.use_spectral={str(use_spectral).lower()} "
+                       f"-S train.use_adversarial={str(use_adversarial).lower()} "
+                       f"-S train.use_skip={str(use_skips).lower()}")
     }
     subprocess.run(['/usr/bin/bash', '-c', 'sbatch slurm_job.sh'], env=env)
-    print(f"Submitted job: n_blocks={n_blocks}, kernel_size={kernel_size}, dilation_growth={dilation_growth}, use_spectral={use_spectral_loss}")
+    print(f"Submitted job: n_blocks={n_blocks}, kernel_size={kernel_size}, dilation_growth={dilation_growth}, "
+          f"use_kl={use_kl}, use_spectral={use_spectral}, use_adversarial={use_adversarial}, use_skips={use_skips}")
 
 if __name__ == "__main__":
-    use_spectral_loss_list = [False]
-    
-    for n_blocks, kernel_size, dilation_growth in generate_hyperparams():
-        for use_spectral_loss in use_spectral_loss_list:
-            submit_batch_job(n_blocks, kernel_size, dilation_growth, use_spectral_loss)
+    for params in generate_hyperparams():
+        submit_batch_job(*params)
