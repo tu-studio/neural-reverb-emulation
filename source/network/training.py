@@ -224,15 +224,19 @@ def train(encoder, decoder, discriminator, train_loader, val_loader, criterion, 
         for param in encoder.parameters():
             param.requires_grad = False
 
-         # Create a progress bar for the entire training process
-        progress_bar = tqdm(total=total_batches, desc="Discri Progress")
+        # Create a progress bar for the entire training process
+        progress_bar = tqdm(total=total_batches, desc="Adversarial Training Progress")
 
         for epoch in range(num_epochs):
+            epoch_d_loss = 0
+            epoch_g_loss = 0
+            epoch_fm_loss = 0
+            epoch_distance = 0
+
             for batch, (dry_audio, wet_audio) in enumerate(train_loader):
                 dry_audio = dry_audio.to(device)
                 wet_audio = wet_audio.to(device)
                 
-            
                 # Train discriminator
                 d_optimizer.zero_grad()
                 optimizer.zero_grad()
@@ -243,10 +247,10 @@ def train(encoder, decoder, discriminator, train_loader, val_loader, criterion, 
                 # Fake samples
                 with torch.no_grad():
                     if use_kl:
-                        mu, logvar, encoder_outputs = encoder(dry_audio_decomposed)
+                        mu, logvar, encoder_outputs = encoder(dry_audio)
                         z = encoder.reparameterize(mu, logvar)
                     else:
-                        encoder_outputs = encoder(dry_audio_decomposed)
+                        encoder_outputs = encoder(dry_audio)
                         z = encoder_outputs.pop()
                     encoder_outputs = encoder_outputs[::-1]
 
@@ -258,43 +262,58 @@ def train(encoder, decoder, discriminator, train_loader, val_loader, criterion, 
 
                 fake_output, fake_features = discriminator(output.detach())
 
-                #distance
+                # Distance
                 distance = criterion(output, wet_audio)
 
-                # compute the different lossses
+                # Compute the different losses
                 discriminator_loss = 0
                 generator_loss = 0
                 feature_matching_distance = 0
                 for feature_true, feature_fake in zip(real_features, fake_features):
-                    feature_matching_distance = feature_matching_distance +  5*sum(
-                            map(
-                                lambda x, y: abs(x - y).mean(),
-                                feature_true,
-                                feature_fake,
-                            )) / len(feature_fake)
+                    feature_matching_distance += 5 * sum(
+                        map(
+                            lambda x, y: abs(x - y).mean(),
+                            feature_true,
+                            feature_fake,
+                        )) / len(feature_fake)
                     if gan_loss == "hinge":
-                        discriminator_loss += (torch.relu(1 - feature_true[-1]) + torch.relu(1+feature_fake[-1])).mean()
-                        generator_loss -= (feature_fake[-1]).mean()
+                        discriminator_loss += (torch.relu(1 - feature_true[-1]) + torch.relu(1 + feature_fake[-1])).mean()
+                        generator_loss -= feature_fake[-1].mean()
                     elif gan_loss == "square":
-                        discriminator_loss += ((feature_true[-1] - 1).pow(2) + (feature_fake[-1]).pow(2)).mean()
+                        discriminator_loss += ((feature_true[-1] - 1).pow(2) + feature_fake[-1].pow(2)).mean()
                         generator_loss += (feature_fake[-1] - 1).pow(2).mean()
 
                 generator_loss = generator_loss + distance + feature_matching_distance
                 
-                # train the discriminator and generator alternatively
+                # Train the discriminator and generator alternatively
                 if epoch % 2 == 0:
                     d_optimizer.zero_grad()
                     discriminator_loss.backward()
                     d_optimizer.step()
                 else:
                     optimizer.zero_grad()
-                    generator_loss_total.backward()
+                    generator_loss.backward()
                     optimizer.step()
+                
+                epoch_g_loss += generator_loss.item()
+                epoch_d_loss += discriminator_loss.item()
+                epoch_fm_loss += feature_matching_distance.item()
+                epoch_distance += distance.item()
 
                 # Update progress bar
                 progress_bar.update(1)
-                progress_bar.set_postfix({'epoch': f'{epoch + 1}/{num_epochs}', 'loss': f'{loss.item():.4f}'})
+                progress_bar.set_postfix({'epoch': f'{epoch + 1}/{num_epochs}', 'D_loss': f'{discriminator_loss.item():.4f}', 'G_loss': f'{generator_loss.item():.4f}'})
 
+            # Log losses to tensorboard
+            tensorboard_writer.add_scalar("Adversarial/Discriminator_Loss", epoch_d_loss / len(train_loader), epoch)
+            tensorboard_writer.add_scalar("Adversarial/Generator_Loss", epoch_g_loss / len(train_loader), epoch)
+            tensorboard_writer.add_scalar("Adversarial/Feature_Matching_Loss", epoch_fm_loss / len(train_loader), epoch)
+            tensorboard_writer.add_scalar("Adversarial/Distance", epoch_distance / len(train_loader), epoch)
+
+            # Log audio samples
+            tensorboard_writer.add_audio("Adversarial/Input", dry_audio[0].cpu(), epoch, sample_rate=sample_rate)
+            tensorboard_writer.add_audio("Adversarial/Target", wet_audio[0].cpu(), epoch, sample_rate=sample_rate)
+            tensorboard_writer.add_audio("Adversarial/Output", output[0].cpu(), epoch, sample_rate=sample_rate)
 
 
     progress_bar.close()
