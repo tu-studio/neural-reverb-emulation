@@ -37,9 +37,16 @@ def main():
     scheduler_rate = params["train"]["scheduler_rate"]
     use_skip = params["train"]["use_skip"]
     use_tcn = params["train"]["use_tcn"]
-    use_spectral = params["train"]["use_spectral"]
+    loss_function = params["metrics"]["loss_function"]
+    additional_mse = params["metrics"]["additional_mse"]
+    additional_spec = params["metrics"]["additional_spec"]
+    additional_stft = params["metrics"]["additional_stft"]
+    additional_fft = params["metrics"]["additional_fft"]
     use_pqmf = params["train"]["use_pqmf"]
     use_adversarial = params["train"]["use_adversarial"]
+    gan_loss = params["gan"]["loss_type"]
+
+    additional_metrics = [additional_mse, additional_spec ,additional_stft, additional_fft]
 
     final_size = calculate_final_input_size(input_size, n_bands, dilation_growth, n_blocks, kernel_size)
     print("final size = ", final_size)
@@ -57,8 +64,21 @@ def main():
     if not use_pqmf:
         n_bands = 1
 
-    discriminator = Discriminator().to(device)
-    d_optimizer = torch.optim.Adam(discriminator.parameters(), lr=0.0002, betas=(0.5, 0.999))
+    # Create the discriminator with the new parameters
+    discriminator = Discriminator(
+        n_layers=params["discriminator"]["n_layers"],
+        base_channels=params["discriminator"]["n_channels"],
+        kernel_size=params["discriminator"]["kernel_size"],
+        stride=params["discriminator"]["stride"],
+        padding=params["discriminator"]["padding"],
+    ).to(device)
+
+    # Update the discriminator optimizer
+    d_optimizer = torch.optim.Adam(
+        discriminator.parameters(),
+        lr=params["discriminator"]["lr"],
+        betas=(params["discriminator"]["beta1"], params["discriminator"]["beta2"])
+    )
 
     # Build the model
     if not use_tcn:
@@ -129,13 +149,17 @@ def main():
 
         model_params = list(model.parameters())
 
-    # setup loss function, optimizer, and scheduler
-    if use_spectral:       
-        # criterion = spectral_distance
-        criterion = single_stft_loss
-        # criterion = fft_loss
-    else:
+    # Use the appropriate loss function based on the parameter
+    if loss_function == "mse":
         criterion = torch.nn.MSELoss()
+    elif loss_function == "spectral_distance":
+        criterion = spectral_distance
+    elif loss_function == "single_stft_loss":
+        criterion = single_stft_loss
+    elif loss_function == "fft_loss":
+        criterion = fft_loss
+    else:
+        raise ValueError(f"Unknown loss function: {loss_function}")
 
     # Setup optimizer
     optimizer = torch.optim.Adam(model_params, lr, (0.5, 0.9))
@@ -188,7 +212,7 @@ def main():
     if not use_tcn:
         train(encoder, decoder, discriminator,train_loader, val_loader, criterion, optimizer, d_optimizer, scheduler,
               tensorboard_writer=writer, num_epochs=n_epochs, device=device,
-              n_bands=n_bands, use_kl=use_kl, use_adversarial=use_adversarial,sample_rate=sample_rate)
+              n_bands=n_bands, use_kl=use_kl, use_adversarial=use_adversarial, sample_rate=sample_rate, additional_metrics= additional_metrics, gan_loss = gan_loss)
         
         test(encoder, decoder, test_loader, criterion, writer, device, n_bands, use_kl, sample_rate)
         

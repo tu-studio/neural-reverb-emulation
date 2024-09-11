@@ -7,7 +7,7 @@ from utils import config
 import os
 from tqdm import tqdm
 
-def train(encoder, decoder, discriminator, train_loader, val_loader, criterion, optimizer, d_optimizer, scheduler, tensorboard_writer, num_epochs=25, device='cpu', n_bands=64, use_kl=False, use_adversarial=False, sample_rate=44100):
+def train(encoder, decoder, discriminator, train_loader, val_loader, criterion, optimizer, d_optimizer, scheduler, tensorboard_writer, num_epochs=25, device='cpu', n_bands=64, use_kl=False, use_adversarial=False, sample_rate=44100, additional_metrics=None, gan_loss=None):
     encoder.to(device)
     if decoder:
         decoder.to(device)
@@ -130,6 +130,17 @@ def train(encoder, decoder, discriminator, train_loader, val_loader, criterion, 
                 tensorboard_writer.add_audio("Audio/TCN_Input", dry_audio[0].cpu(), epoch, sample_rate=sample_rate)
                 tensorboard_writer.add_audio("Audio/TCN_Target", wet_audio[0].cpu(), epoch, sample_rate=sample_rate)
                 tensorboard_writer.add_audio("Audio/TCN_output", output[0].cpu(), epoch, sample_rate=sample_rate)
+            if additional_metrics:
+                for metric_name in additional_metrics:
+                    if metric_name == "spectral_distance":
+                        metric_value = spectral_distance(output, wet_audio)
+                    elif metric_name == "single_stft_loss":
+                        metric_value = single_stft_loss(output, wet_audio)
+                    elif metric_name == "fft_loss":
+                        metric_value = fft_loss(output, wet_audio)
+                    else:
+                        continue
+                    tensorboard_writer.add_scalar(f"Metrics/{metric_name}", metric_value, epoch)
             tensorboard_writer.step()
 
         
@@ -218,8 +229,7 @@ def train(encoder, decoder, discriminator, train_loader, val_loader, criterion, 
 
     progress_bar.close()
 
-    gan_loss = "hinge"
-    if use_adversarial and not use_tcn:
+    if use_adversarial and decoder != None:
         # Freeze the encoder
         for param in encoder.parameters():
             param.requires_grad = False

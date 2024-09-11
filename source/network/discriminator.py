@@ -15,7 +15,7 @@ class DiscriminatorBlock(nn.Module):
         return x
 
 class Discriminator(nn.Module):
-    def __init__(self, in_channels=1, base_channels=64, n_layers=5):
+    def __init__(self, in_channels=1, base_channels=64, n_layers=5, kernel_size=15, padding=7, stride=2):
         super().__init__()
         
         layers = []
@@ -23,7 +23,7 @@ class Discriminator(nn.Module):
         out_ch = base_channels
         
         for i in range(n_layers):
-            layers.append(DiscriminatorBlock(in_ch, out_ch, kernel_size=15, stride=2, padding=7))
+            layers.append(DiscriminatorBlock(in_ch, out_ch, kernel_size=kernel_size, stride=stride, padding=padding))
             in_ch = out_ch
             out_ch = min(out_ch * 2, 512)
         

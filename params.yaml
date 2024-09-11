@@ -10,16 +10,32 @@ train:
   n_inputs: 1
   n_bands: 1
   latent_dim: 64
-  epochs: 500
-  batch_size: 2
+  epochs: 1
+  batch_size: 1
   kernel_size: 7
-  n_blocks: 5
+  n_blocks: 1
   dilation_growth: 3
   n_channels: 128
   lr: 0.0001
   use_kl: false
   use_skip: true
   use_tcn: false
-  use_spectral: false
   use_pqmf: true
   use_adversarial: true
+metrics:
+  loss_function: 'mse'  # Options: 'mse', 'spectral_distance', 'single_stft_loss', 'fft_loss'
+  additional_mse: true
+  additional_spec: true
+  additional_stft: true
+  additional_fft: true
+discriminator:
+  lr: 0.0002
+  beta1: 0.5
+  beta2: 0.999
+  n_layers: 3
+  n_channels: 64
+  kernel_size: 4
+  stride: 2
+  padding: 1
+gan:
+  loss_type: 'hinge'  # Options: 'hinge', 'square'

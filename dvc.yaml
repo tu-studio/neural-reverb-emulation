@@ -56,9 +56,22 @@ stages:
     - train.use_skip
     - train.scheduler_rate
     - train.use_tcn
-    - train.use_spectral
     - train.use_pqmf
     - train.use_adversarial
+    - metrics.loss_function
+    - metrics.additional_mse
+    - metrics.additional_spec
+    - metrics.additional_stft
+    - metrics.additional_fft
+    - discriminator.lr
+    - discriminator.beta1
+    - discriminator.beta2
+    - discriminator.n_layers
+    - discriminator.n_channels
+    - discriminator.kernel_size
+    - discriminator.stride
+    - discriminator.padding
+    - gan.loss_type
   #   outs:
   #   - model/checkpoints/
   # export:
