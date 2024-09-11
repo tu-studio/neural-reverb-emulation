@@ -224,7 +224,7 @@ def train(encoder, decoder, discriminator, train_loader, val_loader, criterion, 
             param.requires_grad = False
 
          # Create a progress bar for the entire training process
-        progress_bar = tqdm(total=total_batches, desc="Training Progress")
+        progress_bar = tqdm(total=total_batches, desc="Discri Progress")
 
         for epoch in range(num_epochs):
             # Initialize additional loss tracking variables
@@ -275,10 +275,14 @@ def train(encoder, decoder, discriminator, train_loader, val_loader, criterion, 
                 # Reconstruction loss
                 rec_loss = criterion(output, wet)
 
+                
+
                 # Feature matching loss
                 feature_matching_loss = 0
-                for real_feat, fake_feat in zip(real_features, g_features):
-                    feature_matching_loss += torch.mean(torch.abs(real_feat - fake_feat))
+                # for real_feat, fake_feat in zip(real_features, g_features):
+                #     print(len(fake_feat))
+                #     print(len(real_feat))
+                #     feature_matching_loss += torch.mean(torch.abs(real_feat - fake_feat))
 
                 # Combine losses
                 loss = rec_loss + g_loss + feature_matching_loss * 10  # Adjust weights as needed
@@ -291,7 +295,7 @@ def train(encoder, decoder, discriminator, train_loader, val_loader, criterion, 
                 train_epoch_d_loss += d_loss.item()
                 train_epoch_g_loss += g_loss.item()
                 train_epoch_rec_loss += rec_loss.item()
-                train_epoch_feature_matching_loss += feature_matching_loss.item()
+                # train_epoch_feature_matching_loss += feature_matching_loss.item()
 
                 # Update progress bar
                 progress_bar.update(1)
