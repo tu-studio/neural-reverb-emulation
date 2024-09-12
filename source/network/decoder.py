@@ -40,34 +40,34 @@ class DecoderTCNBlock(torch.nn.Module):
         return x
 
 class NoiseGenerator(nn.Module):
-    def __init__(self, in_size, data_size, ratios, noise_bands):
+    def __init__(self, n_channels, noise_bands=4):
         super().__init__()
-        net = []
-        channels = [in_size] * len(ratios) + [data_size * noise_bands]
-        for i, r in enumerate(ratios):
-            net.append(
-                nn.ConvTranspose1d(
-                    channels[i],
-                    channels[i + 1],
-                    2 * r,
-                    stride=r,
-                    padding=r // 2
-                ))
-            if i != len(ratios) - 1:
-                net.append(nn.LeakyReLU(0.2))
+        self.n_channels = n_channels
+        self.noise_bands = noise_bands
 
-        self.net = nn.Sequential(*net)
-        self.data_size = data_size
-        self.target_size = int(np.prod(ratios))
+        # Create the network
+        layers = []
+        current_channels = n_channels
+        for i in range(3):  # Reduce the number of steps
+            layers.append(
+                nn.Conv1d(
+                    current_channels,
+                    max(current_channels // 2, noise_bands),
+                    kernel_size=3,
+                    padding=1
+                )
+            )
+            if i < 2:  # No activation on the last layer
+                layers.append(nn.LeakyReLU(0.2))
+            current_channels = max(current_channels // 2, noise_bands)
+
+        self.net = nn.Sequential(*layers)
 
     def forward(self, x):
-        amp = torch.sigmoid(self.net(x) - 5)
-        amp = amp.permute(0, 2, 1)
-        amp = amp.reshape(amp.shape[0], amp.shape[1], self.data_size, -1)
-
+        # x shape: [batch_size, n_channels, 1]
+        amp = torch.sigmoid(self.net(x) - 5)  # Shape: [batch_size, noise_bands, length]
         noise = torch.randn_like(amp) * amp
-        noise = noise.reshape(noise.shape[0], noise.shape[1], -1)
-        return noise
+        return noise.sum(dim=1, keepdim=True)
 
 class DecoderTCN(nn.Module):
     def __init__(self, n_outputs=1, n_blocks=10, kernel_size=13, n_channels=64, dilation_growth=4, latent_dim=16, use_kl=False, use_skip=True, use_noise=True, noise_ratios=[4], noise_bands=4):
@@ -108,7 +108,7 @@ class DecoderTCN(nn.Module):
                 in_ch = out_ch # Update in_ch for the next block
 
         if use_noise:
-            self.noise_generator = NoiseGenerator(n_outputs, n_outputs, noise_ratios, noise_bands)
+            self.noise_generator = NoiseGenerator(n_outputs, noise_bands=noise_bands)
 
     def forward(self, x, skips):
         if self.use_kl:
