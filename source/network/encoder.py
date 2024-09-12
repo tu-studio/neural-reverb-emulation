@@ -62,19 +62,20 @@ class EncoderTCN(torch.nn.Module):
         # Compute mean and log-variance
         mu = torch.tanh(self.conv_mu(x))
         logvar = torch.nn.functional.softplus(self.conv_logvar(x))
+        print(mu.shape)
         return mu, logvar, encoder_outputs
     return encoder_outputs
 
-def reparameterize(self, mu, logvar):
-    """Reparameterization trick to sample from N(mu, var) from N(0,1)."""
-    std = torch.exp(0.5 * logvar)
-    eps = torch.randn_like(std)
-    return mu + eps * std
+  def reparameterize(self, mu, logvar):
+      """Reparameterization trick to sample from N(mu, var) from N(0,1)."""
+      std = torch.exp(0.5 * logvar)
+      eps = torch.randn_like(std)
+      return mu + eps * std
 
-def compute_receptive_field(self):
-    """Compute the receptive field in samples."""
-    rf = self.kernel_size
-    for n in range(1, self.n_blocks):
-        dilation = self.dilation_growth ** (n % self.n_blocks)
-        rf = rf + ((self.kernel_size - 1) * dilation)
-    return rf
+  def compute_receptive_field(self):
+      """Compute the receptive field in samples."""
+      rf = self.kernel_size
+      for n in range(1, self.n_blocks):
+          dilation = self.dilation_growth ** (n % self.n_blocks)
+          rf = rf + ((self.kernel_size - 1) * dilation)
+      return rf

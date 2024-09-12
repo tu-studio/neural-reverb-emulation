@@ -105,21 +105,24 @@ def main():
         random_input = torch.randn(1, n_bands, int(2**math.ceil(math.log2(input_size))/n_bands))
         random_skips = []
         x = random_input
-        for block in encoder.blocks:
-            x = block(x)
-            random_skips.append(x)
-        random_skips.pop()
-        random_skips = random_skips[::-1]
-        random_skips.append(random_input)
+
+        if use_kl:
+            mu, logvar, encoder_outputs = encoder(x)
+            z = encoder.reparameterize(mu, logvar)
+        else:
+            encoder_outputs = encoder(x)
+            z = encoder_outputs.pop()
+        encoder_outputs = encoder_outputs[::-1]
+
 
         print("Encoder Architecture")
         print("Input shape: ", random_input.shape)
         torchinfo.summary(encoder, input_data=random_input, device=device)
 
         print("Decoder Architecture")
-        print("Input shape: ", x.shape)
-        print("Random skips shape: ", [i.shape for i in random_skips])
-        torchinfo.summary(decoder, input_data=[x, random_skips], device=device)
+        print("Input shape: ", z.shape)
+        print("Random skips shape: ", [i.shape for i in encoder_outputs])
+        torchinfo.summary(decoder, input_data=[z, encoder_outputs], device=device)
 
         combined_model = CombinedEncoderDecoder(encoder, decoder)
 
