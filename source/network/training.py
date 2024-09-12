@@ -136,15 +136,18 @@ def train(encoder, decoder, discriminator, train_loader, val_loader, criterion, 
                     print(metric_name)
                     if metric_name and i == 0:
                         metric_value = spectral_distance(output, wet_audio)
+                        tensorboard_writer.add_scalar(f"Metrics/{spectral_distance}", metric_value, epoch)
                     elif metric_name and i == 1: 
                         metric_value = single_stft_loss(output, wet_audio)
+                        tensorboard_writer.add_scalar(f"Metrics/{stft_loss}", metric_value, epoch)
                     elif metric_name and i == 2: 
                         metric_value = fft_loss(output, wet_audio)
+                        tensorboard_writer.add_scalar(f"Metrics/{fft_loss}", metric_value, epoch)
                     elif metric_name and i == 3:
                         metric_value = torch.nn.MSELoss(output, wet_audio)
+                        tensorboard_writer.add_scalar(f"Metrics/{MSELoss}", metric_value, epoch)
                     else:
                         continue
-                    tensorboard_writer.add_scalar(f"Metrics/{metric_name}", metric_value, epoch)
             tensorboard_writer.step()
 
         
