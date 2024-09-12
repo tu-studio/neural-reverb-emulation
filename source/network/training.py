@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.nn.utils import clip_grad_norm_
 from network.ravepqmf import PQMF, center_pad_next_pow_2
+from network.metrics import spectral_distance, single_stft_loss, fft_loss
 from utils import config
 import os
 from tqdm import tqdm
@@ -131,13 +132,15 @@ def train(encoder, decoder, discriminator, train_loader, val_loader, criterion, 
                 tensorboard_writer.add_audio("Audio/TCN_Target", wet_audio[0].cpu(), epoch, sample_rate=sample_rate)
                 tensorboard_writer.add_audio("Audio/TCN_output", output[0].cpu(), epoch, sample_rate=sample_rate)
             if additional_metrics:
-                for metric_name in additional_metrics:
-                    if metric_name == "spectral_distance":
+                for (metric_name, i) in enumerate(additional_metrics):
+                    if metric_name and i == 0:
                         metric_value = spectral_distance(output, wet_audio)
-                    elif metric_name == "single_stft_loss":
+                    elif metric_name and i == 1: 
                         metric_value = single_stft_loss(output, wet_audio)
-                    elif metric_name == "fft_loss":
+                    elif metric_name and i == 2: 
                         metric_value = fft_loss(output, wet_audio)
+                    elif metric_name and i == 3:
+                        metric_value = torch.nn.MSELoss(output, wet_audio)
                     else:
                         continue
                     tensorboard_writer.add_scalar(f"Metrics/{metric_name}", metric_value, epoch)

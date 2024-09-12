@@ -46,8 +46,7 @@ def main():
     use_adversarial = params["train"]["use_adversarial"]
     gan_loss = params["gan"]["loss_type"]
     use_noise = params["train"]["use_noise"]
-
-    additional_metrics = [additional_mse, additional_spec ,additional_stft, additional_fft]
+    additional_metrics = [ additional_spec ,additional_stft, additional_fft, additional_mse]
 
     final_size = calculate_final_input_size(input_size, n_bands, dilation_growth, n_blocks, kernel_size)
     print("final size = ", final_size)
