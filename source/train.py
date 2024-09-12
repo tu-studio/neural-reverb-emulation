@@ -45,6 +45,7 @@ def main():
     use_pqmf = params["train"]["use_pqmf"]
     use_adversarial = params["train"]["use_adversarial"]
     gan_loss = params["gan"]["loss_type"]
+    use_noise = params["train"]["use_noise"]
 
     additional_metrics = [additional_mse, additional_spec ,additional_stft, additional_fft]
 
@@ -99,7 +100,8 @@ def main():
             n_channels=n_channels,
             latent_dim=latent_dim,
             use_kl=use_kl,
-            use_skip=use_skip)
+            use_skip=use_skip,
+            use_noise=use_noise)
         
         random_input = torch.randn(1, n_bands, int(2**math.ceil(math.log2(input_size))/n_bands))
         random_skips = []

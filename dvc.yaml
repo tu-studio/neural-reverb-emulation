@@ -58,6 +58,7 @@ stages:
     - train.use_tcn
     - train.use_pqmf
     - train.use_adversarial
+    - train.use_noise
     - metrics.loss_function
     - metrics.additional_mse
     - metrics.additional_spec

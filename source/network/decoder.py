@@ -1,4 +1,7 @@
 import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import numpy as np
 
 class DecoderTCNBlock(torch.nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size, dilation, activation=True, use_skip=True):
@@ -36,8 +39,38 @@ class DecoderTCNBlock(torch.nn.Module):
             x = x + self.alpha * skip
         return x
 
-class DecoderTCN(torch.nn.Module):
-    def __init__(self, n_outputs=1, n_blocks=10, kernel_size=13, n_channels=64, dilation_growth=4, latent_dim=16, use_kl=False, use_skip=True):
+class NoiseGenerator(nn.Module):
+    def __init__(self, in_size, data_size, ratios, noise_bands):
+        super().__init__()
+        net = []
+        channels = [in_size] * len(ratios) + [data_size * noise_bands]
+        for i, r in enumerate(ratios):
+            net.append(
+                nn.ConvTranspose1d(
+                    channels[i],
+                    channels[i + 1],
+                    2 * r,
+                    stride=r,
+                    padding=r // 2
+                ))
+            if i != len(ratios) - 1:
+                net.append(nn.LeakyReLU(0.2))
+
+        self.net = nn.Sequential(*net)
+        self.data_size = data_size
+        self.target_size = int(np.prod(ratios))
+
+    def forward(self, x):
+        amp = torch.sigmoid(self.net(x) - 5)
+        amp = amp.permute(0, 2, 1)
+        amp = amp.reshape(amp.shape[0], amp.shape[1], self.data_size, -1)
+
+        noise = torch.randn_like(amp) * amp
+        noise = noise.reshape(noise.shape[0], noise.shape[1], -1)
+        return noise
+
+class DecoderTCN(nn.Module):
+    def __init__(self, n_outputs=1, n_blocks=10, kernel_size=13, n_channels=64, dilation_growth=4, latent_dim=16, use_kl=False, use_skip=True, use_noise=True, noise_ratios=[4], noise_bands=4):
         super().__init__()
         self.kernel_size = kernel_size
         self.n_channels = n_channels
@@ -45,12 +78,12 @@ class DecoderTCN(torch.nn.Module):
         self.n_blocks = n_blocks
         self.use_kl = use_kl
         self.use_skip = use_skip
+        self.use_noise = use_noise
 
         # Add a convolutional layer to leave latent space
         initial_channels = n_channels * (2 ** (n_blocks - 1))
         self.conv_decode = torch.nn.Conv1d(latent_dim, initial_channels, 1)
 
-        print(f"Building DecoderTCN with {n_blocks} blocks")
         self.blocks = torch.nn.ModuleList()
 
         in_ch = n_channels * (2 ** (n_blocks - 1))
@@ -67,7 +100,6 @@ class DecoderTCN(torch.nn.Module):
             
             act = True
             dilation = dilation_growth ** (n_blocks - n)
-            print(f"Appended block {n} with in_ch={in_ch}, kernel_size={kernel_size}, out_ch={out_ch}, dilation={dilation}.")
             if (n+1) != n_blocks:
                 self.blocks.append(DecoderTCNBlock(in_ch, out_ch, kernel_size, dilation, activation=act, use_skip=use_skip))
             else: 
@@ -75,12 +107,20 @@ class DecoderTCN(torch.nn.Module):
             if (n+1) != n_blocks:
                 in_ch = out_ch # Update in_ch for the next block
 
+        if use_noise:
+            self.noise_generator = NoiseGenerator(n_outputs, n_outputs, noise_ratios, noise_bands)
+
     def forward(self, x, skips):
         if self.use_kl:
             x = self.conv_decode(x)
 
         for i, (block, skip) in enumerate(zip(self.blocks, skips)):
             x = block(x, skip)
+
+        if self.use_noise:
+            noise = self.noise_generator(x)
+            x = x + noise
+
         return x
     
     def get_alpha_values(self):
