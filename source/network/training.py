@@ -132,7 +132,8 @@ def train(encoder, decoder, discriminator, train_loader, val_loader, criterion, 
                 tensorboard_writer.add_audio("Audio/TCN_Target", wet_audio[0].cpu(), epoch, sample_rate=sample_rate)
                 tensorboard_writer.add_audio("Audio/TCN_output", output[0].cpu(), epoch, sample_rate=sample_rate)
             if additional_metrics:
-                for (metric_name, i) in enumerate(additional_metrics):
+                for (i, metric_name) in enumerate(additional_metrics):
+                    print(metric_name)
                     if metric_name and i == 0:
                         metric_value = spectral_distance(output, wet_audio)
                     elif metric_name and i == 1: 

@@ -59,8 +59,5 @@ def fft_loss(x, y):
     """
     x_fft = torch.fft.fft(x)
     y_fft = torch.fft.fft(y)
-
-    print(f"x range: {x.min().item()} to {x.max().item()}")
-    print(f"y range: {y.min().item()} to {y.max().item()}")
-
+    
     return lin_distance(x_fft.abs(), y_fft.abs())
