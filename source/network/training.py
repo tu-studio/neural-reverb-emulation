@@ -133,19 +133,19 @@ def train(encoder, decoder, discriminator, train_loader, val_loader, criterion, 
                 tensorboard_writer.add_audio("Audio/TCN_output", output[0].cpu(), epoch, sample_rate=sample_rate)
             if additional_metrics:
                 for (i, metric_name) in enumerate(additional_metrics):
-                    print(metric_name)
                     if metric_name and i == 0:
-                        metric_value = spectral_distance(output, wet_audio)
-                        tensorboard_writer.add_scalar(f"Metrics/{spectral_distance}", metric_value, epoch)
+                        metric_value = spectral_distance(output, wet)
+                        tensorboard_writer.add_scalar(f"Metrics/ spectral distance", metric_value, epoch)
                     elif metric_name and i == 1: 
-                        metric_value = single_stft_loss(output, wet_audio)
-                        tensorboard_writer.add_scalar(f"Metrics/{stft_loss}", metric_value, epoch)
+                        metric_value = single_stft_loss(output, wet)
+                        tensorboard_writer.add_scalar(f"Metrics/ stft loss ", metric_value, epoch)
                     elif metric_name and i == 2: 
-                        metric_value = fft_loss(output, wet_audio)
-                        tensorboard_writer.add_scalar(f"Metrics/{fft_loss}", metric_value, epoch)
+                        metric_value = fft_loss(output, wet)
+                        tensorboard_writer.add_scalar(f"Metrics/ fft loss", metric_value, epoch)
                     elif metric_name and i == 3:
-                        metric_value = torch.nn.MSELoss(output, wet_audio)
-                        tensorboard_writer.add_scalar(f"Metrics/{MSELoss}", metric_value, epoch)
+                        mse_loss = torch.nn.MSELoss()
+                        metric_value = mse_loss(output, wet)
+                        tensorboard_writer.add_scalar(f"Metrics/ MSE", metric_value, epoch)
                     else:
                         continue
             tensorboard_writer.step()
