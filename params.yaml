@@ -21,7 +21,7 @@ train:
   n_inputs: 1
   n_bands: 1
   latent_dim: 128
-  epochs: 1000
+  epochs: 500
   batch_size: 2
   kernel_size: 13
   n_blocks: 4
