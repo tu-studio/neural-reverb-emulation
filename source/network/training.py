@@ -114,7 +114,7 @@ def train(encoder, decoder, discriminator, train_loader, val_loader, criterion, 
             train_avg_epoch_kl_div = train_epoch_kl_div / len(train_loader)
 
         # Log loss
-        if epoch % 5 == 0 :
+        if epoch % 5 == 1:
             tensorboard_writer.add_scalar("Loss/ training loss", train_avg_epoch_loss, epoch)
             tensorboard_writer.add_scalar("Loss/ training criterion", train_avg_epoch_loss_criterion, epoch)
             if use_kl:
@@ -122,15 +122,7 @@ def train(encoder, decoder, discriminator, train_loader, val_loader, criterion, 
             if decoder:
                 for i, alpha in enumerate(decoder.get_alpha_values()):
                     tensorboard_writer.add_scalar(f"Alpha/Block_{i}", alpha, epoch)
-            # Log audio samples
-            if decoder:
-                tensorboard_writer.add_audio("Audio/AE_Input", dry_audio[0].cpu(), epoch, sample_rate=sample_rate)
-                tensorboard_writer.add_audio("Audio/AE_Target", wet_audio[0].cpu(), epoch, sample_rate=sample_rate)
-                tensorboard_writer.add_audio("Audio/AE_output", output[0].cpu(), epoch, sample_rate=sample_rate)
-            else:
-                tensorboard_writer.add_audio("Audio/TCN_Input", dry_audio[0].cpu(), epoch, sample_rate=sample_rate)
-                tensorboard_writer.add_audio("Audio/TCN_Target", wet_audio[0].cpu(), epoch, sample_rate=sample_rate)
-                tensorboard_writer.add_audio("Audio/TCN_output", output[0].cpu(), epoch, sample_rate=sample_rate)
+            
             if additional_metrics:
                 for (i, metric_name) in enumerate(additional_metrics):
                     if metric_name and i == 0:
@@ -148,6 +140,18 @@ def train(encoder, decoder, discriminator, train_loader, val_loader, criterion, 
                         tensorboard_writer.add_scalar(f"Metrics/ MSE", metric_value, epoch)
                     else:
                         continue
+
+        if epoch % 100 == 1:
+            # Log audio samples
+            if decoder:
+                tensorboard_writer.add_audio("Audio/AE_Input", dry_audio[0].cpu(), epoch, sample_rate=sample_rate)
+                tensorboard_writer.add_audio("Audio/AE_Target", wet_audio[0].cpu(), epoch, sample_rate=sample_rate)
+                tensorboard_writer.add_audio("Audio/AE_output", output[0].cpu(), epoch, sample_rate=sample_rate)
+            else:
+                tensorboard_writer.add_audio("Audio/TCN_Input", dry_audio[0].cpu(), epoch, sample_rate=sample_rate)
+                tensorboard_writer.add_audio("Audio/TCN_Target", wet_audio[0].cpu(), epoch, sample_rate=sample_rate)
+                tensorboard_writer.add_audio("Audio/TCN_output", output[0].cpu(), epoch, sample_rate=sample_rate)
+            
             tensorboard_writer.step()
 
         
@@ -223,17 +227,19 @@ def train(encoder, decoder, discriminator, train_loader, val_loader, criterion, 
         if use_kl:
             val_avg_epoch_kl_div = val_epoch_kl_div / len(val_loader)
 
-        # Log loss
-        tensorboard_writer.add_scalar("Loss/validation loss", val_avg_epoch_loss, epoch)
-        tensorboard_writer.add_scalar("Loss/validation criterion", val_avg_epoch_loss_criterion, epoch)
-        if use_kl:
-            tensorboard_writer.add_scalar("Loss/validation kl_div", val_avg_epoch_kl_div, epoch)
+        if epoch % 5 == 1:
+            # Log loss
+            tensorboard_writer.add_scalar("Loss/validation loss", val_avg_epoch_loss, epoch)
+            tensorboard_writer.add_scalar("Loss/validation criterion", val_avg_epoch_loss_criterion, epoch)
+            if use_kl:
+                tensorboard_writer.add_scalar("Loss/validation kl_div", val_avg_epoch_kl_div, epoch)
 
-        # Log audio samples (assuming you want to log validation audio as well)
-        tensorboard_writer.add_audio("Audio/Val_Input", dry_audio[0].cpu(), epoch, sample_rate=sample_rate)
-        tensorboard_writer.add_audio("Audio/Val_Target", wet_audio[0].cpu(), epoch, sample_rate=sample_rate)
-        tensorboard_writer.add_audio("Audio/Val_Output", output[0].cpu(), epoch, sample_rate=sample_rate)
-        tensorboard_writer.step()
+        if epoch % 100 == 1:
+            # Log audio samples (assuming you want to log validation audio as well)
+            tensorboard_writer.add_audio("Audio/Val_Input", dry_audio[0].cpu(), epoch, sample_rate=sample_rate)
+            tensorboard_writer.add_audio("Audio/Val_Target", wet_audio[0].cpu(), epoch, sample_rate=sample_rate)
+            tensorboard_writer.add_audio("Audio/Val_Output", output[0].cpu(), epoch, sample_rate=sample_rate)
+            tensorboard_writer.step()
 
     progress_bar.close()
 
@@ -267,6 +273,7 @@ def train(encoder, decoder, discriminator, train_loader, val_loader, criterion, 
                     if use_kl:
                         mu, logvar, encoder_outputs = encoder(dry_audio)
                         z = encoder.reparameterize(mu, logvar)
+                        print(z.shape)
                     else:
                         encoder_outputs = encoder(dry_audio)
                         z = encoder_outputs.pop()
@@ -322,16 +329,18 @@ def train(encoder, decoder, discriminator, train_loader, val_loader, criterion, 
                 progress_bar.update(1)
                 progress_bar.set_postfix({'epoch': f'{epoch + 1}/{num_epochs}', 'D_loss': f'{discriminator_loss.item():.4f}', 'G_loss': f'{generator_loss.item():.4f}'})
 
-            # Log losses to tensorboard
-            tensorboard_writer.add_scalar("Adversarial/Discriminator_Loss", epoch_d_loss / len(train_loader), epoch)
-            tensorboard_writer.add_scalar("Adversarial/Generator_Loss", epoch_g_loss / len(train_loader), epoch)
-            tensorboard_writer.add_scalar("Adversarial/Feature_Matching_Loss", epoch_fm_loss / len(train_loader), epoch)
-            tensorboard_writer.add_scalar("Adversarial/Distance", epoch_distance / len(train_loader), epoch)
+            if epoch % 5 == 1:
+                # Log losses to tensorboard
+                tensorboard_writer.add_scalar("Adversarial/Discriminator_Loss", epoch_d_loss / len(train_loader), epoch)
+                tensorboard_writer.add_scalar("Adversarial/Generator_Loss", epoch_g_loss / len(train_loader), epoch)
+                tensorboard_writer.add_scalar("Adversarial/Feature_Matching_Loss", epoch_fm_loss / len(train_loader), epoch)
+                tensorboard_writer.add_scalar("Adversarial/Distance", epoch_distance / len(train_loader), epoch)
 
-            # Log audio samples
-            tensorboard_writer.add_audio("Adversarial/Input", dry_audio[0].cpu(), epoch, sample_rate=sample_rate)
-            tensorboard_writer.add_audio("Adversarial/Target", wet_audio[0].cpu(), epoch, sample_rate=sample_rate)
-            tensorboard_writer.add_audio("Adversarial/Output", output[0].cpu(), epoch, sample_rate=sample_rate)
+            if epoch % 100 == 1:
+                # Log audio samples
+                tensorboard_writer.add_audio("Adversarial/Input", dry_audio[0].cpu(), epoch, sample_rate=sample_rate)
+                tensorboard_writer.add_audio("Adversarial/Target", wet_audio[0].cpu(), epoch, sample_rate=sample_rate)
+                tensorboard_writer.add_audio("Adversarial/Output", output[0].cpu(), epoch, sample_rate=sample_rate)
 
 
     progress_bar.close()

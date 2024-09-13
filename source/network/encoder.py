@@ -62,7 +62,6 @@ class EncoderTCN(torch.nn.Module):
         # Compute mean and log-variance
         mu = torch.tanh(self.conv_mu(x))
         logvar = torch.nn.functional.softplus(self.conv_logvar(x))
-        print(mu.shape)
         return mu, logvar, encoder_outputs
     return encoder_outputs
 
