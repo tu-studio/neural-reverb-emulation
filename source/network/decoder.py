@@ -25,7 +25,8 @@ class DecoderTCNBlock(torch.nn.Module):
         # torch.nn.init.xavier_uniform_(self.res.weight)
 
         # Learnable parameter for scaling the skip connection
-        self.alpha = torch.nn.Parameter(torch.tensor(1.0))
+        self.gate = torch.nn.Conv1d(in_channels + out_channels, out_channels, 1)
+        self.sigmoid = torch.nn.Sigmoid()
 
         self.kernel_size = kernel_size
         self.dilation = dilation
@@ -36,7 +37,8 @@ class DecoderTCNBlock(torch.nn.Module):
         if hasattr(self, "act"):
             x = self.act(x)
         if self.use_skip:
-            x = x + self.alpha * skip
+            gate = self.sigmoid(self.gate(torch.cat([x, skip], dim=1)))
+            x = x + gate * skip
         return x
 
 class NoiseGenerator(nn.Module):
