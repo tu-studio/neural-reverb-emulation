@@ -80,6 +80,9 @@ def train(encoder, decoder, discriminator, train_loader, val_loader, criterion, 
                 rf = encoder.compute_receptive_field()
                 output_decomposed = encoder(dry_audio_decomposed)
                 wet_audio_decomposed = wet_audio_decomposed[..., rf-1:]
+            
+            
+            loss = criterion(output_decomposed , wet_audio_decomposed)
 
             if n_bands > 1:
                 dry = pqmf.inverse(dry_audio_decomposed)
@@ -89,7 +92,6 @@ def train(encoder, decoder, discriminator, train_loader, val_loader, criterion, 
                 output = output_decomposed
                 wet =  wet_audio_decomposed
 
-            loss = criterion(output , wet)
 
             train_epoch_criterion += loss
             
@@ -202,6 +204,10 @@ def train(encoder, decoder, discriminator, train_loader, val_loader, criterion, 
                     output_decomposed = encoder(dry_audio_decomposed)
                     wet_audio_decomposed = wet_audio_decomposed[..., rf-1:]
 
+                print(output_decomposed.shape)
+                loss = criterion(output_decomposed, wet_audio_decomposed)
+                print(loss)
+
                 if n_bands > 1:
                     dry = pqmf.inverse(dry_audio_decomposed)
                     output = pqmf.inverse(output_decomposed)
@@ -210,7 +216,7 @@ def train(encoder, decoder, discriminator, train_loader, val_loader, criterion, 
                     output = output_decomposed
                     wet =  wet_audio_decomposed
 
-                loss = criterion(output, wet)
+                
 
                 val_epoch_criterion += loss
 
@@ -285,7 +291,7 @@ def train(encoder, decoder, discriminator, train_loader, val_loader, criterion, 
                 fake_output, fake_features = discriminator(output.detach())
 
                 # Distance
-                distance = criterion(output, wet_audio)
+                distance = criterion(output_decomposed, wet_audio_decomposed)
 
                 # Compute the different losses
                 discriminator_loss = 0
