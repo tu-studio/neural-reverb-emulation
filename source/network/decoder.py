@@ -4,7 +4,36 @@ import torch.nn.functional as F
 import numpy as np
 import torch.nn.utils.weight_norm as wn
 
-class DecoderTCNBlock(torch.nn.Module):
+class ResidualLayer(nn.Module):
+    def __init__(self, channels, kernel_size, dilation):
+        super().__init__()
+        self.dilated_conv = wn(nn.Conv1d(
+            channels, channels, kernel_size,
+            padding=dilation * (kernel_size - 1) // 2,
+            dilation=dilation
+        ))
+        self.conv_1x1 = wn(nn.Conv1d(channels, channels, 1))
+        self.leaky_relu = nn.LeakyReLU(0.2)
+
+    def forward(self, x):
+        y = self.dilated_conv(self.leaky_relu(x))
+        y = self.conv_1x1(self.leaky_relu(y))
+        return x + y
+
+class ResidualStack(nn.Module):
+    def __init__(self, channels, kernel_size, num_layers=3):
+        super().__init__()
+        self.layers = nn.ModuleList([
+            ResidualLayer(channels, kernel_size, dilation=3**i)
+            for i in range(num_layers)
+        ])
+
+    def forward(self, x):
+        for layer in self.layers:
+            x = layer(x)
+        return x
+
+class DecoderTCNBlock(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size, dilation, activation=True, use_skip=True, use_wn=True):
         super().__init__()
         if use_wn:
@@ -26,20 +55,15 @@ class DecoderTCNBlock(torch.nn.Module):
         torch.nn.init.xavier_uniform_(self.conv.weight)
         torch.nn.init.zeros_(self.conv.bias)
 
-        # Activation function
+        self.residual_stack = ResidualStack(out_channels, kernel_size=3)
+
         if activation:
             self.act = torch.nn.PReLU()
 
-        # Residual connection
-        # self.res = torch.nn.Conv1d(in_channels, out_channels, 1, bias=True)
-        # torch.nn.init.xavier_uniform_(self.res.weight)
-
-        # Learnable parameter for scaling the skip connection
         if use_wn:
             self.gate = wn(torch.nn.Conv1d(out_channels + out_channels, out_channels, 1))
         else:
             self.gate = torch.nn.Conv1d(out_channels + out_channels, out_channels, 1)
-    
         self.sigmoid = torch.nn.Sigmoid()
 
         self.kernel_size = kernel_size
@@ -50,6 +74,9 @@ class DecoderTCNBlock(torch.nn.Module):
         x = self.conv(x)
         if hasattr(self, "act"):
             x = self.act(x)
+        
+        x = self.residual_stack(x)
+
         if self.use_skip:
             gate = self.sigmoid(self.gate(torch.cat([x, skip], dim=1)))
             x = x + gate * skip
