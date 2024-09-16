@@ -25,7 +25,7 @@ class DecoderTCNBlock(torch.nn.Module):
         # torch.nn.init.xavier_uniform_(self.res.weight)
 
         # Learnable parameter for scaling the skip connection
-        self.gate = torch.nn.Conv1d(in_channels + out_channels, out_channels, 1)
+        self.gate = torch.nn.Conv1d(out_channels + out_channels, out_channels, 1)
         self.sigmoid = torch.nn.Sigmoid()
 
         self.kernel_size = kernel_size
