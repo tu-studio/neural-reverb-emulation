@@ -15,6 +15,9 @@ from utils import logs, config
 from pathlib import Path
 import math
 
+def count_parameters(model):
+    return sum(p.numel() for p in model.parameters() if p.requires_grad)
+
 def main():
     # Load the hyperparameters from the params yaml file into a Dictionary
     params = config.Params('params.yaml')
@@ -131,6 +134,11 @@ def main():
 
         combined_model = CombinedEncoderDecoder(encoder, decoder)
 
+        # Count and log total parameters
+        total_params = count_parameters(combined_model)
+        writer.add_scalar("Model/Total_Parameters", total_params, 0)
+        print(f"Total trainable parameters: {total_params}")
+
         # Add the combined model graph to TensorBoard
         random_input = torch.randn(1, n_bands, int(2**math.ceil(math.log2(input_size))/n_bands))
         writer.add_graph(combined_model, random_input.to(device))
@@ -149,6 +157,11 @@ def main():
             n_channels=n_channels,
             dilation_growth=dilation_growth
         )
+
+        # Count and log total parameters
+        total_params = count_parameters(model)
+        writer.add_scalar("Model/Total_Parameters", total_params, 0)
+        print(f"Total trainable parameters: {total_params}")
         
         print("TCN Architecture")
         torchinfo.summary(model, input_data=torch.randn(1, n_inputs, input_size), device=device)
