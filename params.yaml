@@ -8,12 +8,12 @@ train:
   scheduler_rate: 0.1
   device_request: 'cuda'
   n_inputs: 1
-  n_bands: 1
+  n_bands: 2
   latent_dim: 64
-  epochs: 750
-  batch_size: 2
+  epochs: 1
+  batch_size: 1
   kernel_size: 13
-  n_blocks: 4
+  n_blocks: 2
   dilation_growth: 10
   n_channels: 32
   lr: 0.0001
@@ -23,6 +23,8 @@ train:
   use_pqmf: true
   use_adversarial: false
   use_noise: false
+  use_wn: true
+  use_batch_norm: true
 metrics:
   loss_function: 'combined'  # Options: 'mse', 'spectral_distance', 'single_stft_loss', 'fft_loss'
   additional_mse: true
@@ -33,7 +35,7 @@ discriminator:
   lr: 0.0002
   beta1: 0.5
   beta2: 0.999
-  n_layers: 4
+  n_layers: 1
   n_channels: 64
   kernel_size: 4
   stride: 2
