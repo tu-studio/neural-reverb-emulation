@@ -125,5 +125,3 @@ class DecoderTCN(nn.Module):
 
         return x
     
-    def get_alpha_values(self):
-        return [block.alpha.item() for block in self.blocks]

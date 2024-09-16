@@ -119,9 +119,6 @@ def train(encoder, decoder, discriminator, train_loader, val_loader, criterion, 
             tensorboard_writer.add_scalar("Loss/ training criterion", train_avg_epoch_loss_criterion, epoch)
             if use_kl:
                 tensorboard_writer.add_scalar("Loss/training kl_div", train_avg_epoch_kl_div, epoch)
-            if decoder:
-                for i, alpha in enumerate(decoder.get_alpha_values()):
-                    tensorboard_writer.add_scalar(f"Alpha/Block_{i}", alpha, epoch)
             
             if additional_metrics:
                 for (i, metric_name) in enumerate(additional_metrics):
