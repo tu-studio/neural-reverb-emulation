@@ -40,7 +40,7 @@ def generate_hyperparams():
     n_blocks_options = range(2, 7)  # 2 to 6
     
     use_kl_options = [False]
-    use_adversarial_options = [True]
+    use_adversarial_options = [False]
     use_skips_options = [True]
     use_noise_options = [True]
 
