@@ -25,6 +25,7 @@ train:
   use_noise: false
   use_wn: true
   use_batch_norm: true
+  use_residual: true
 metrics:
   loss_function: 'combined'  # Options: 'mse', 'spectral_distance', 'single_stft_loss', 'fft_loss'
   additional_mse: true

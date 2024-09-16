@@ -1,6 +1,6 @@
 # TODO
 
-- params to tensorboard
+- params to tensorboard --> Done
 - spectral/MSe pqmf --> Done
 - batch norm/ weight norm --> Done
 - Residual stack --> Done

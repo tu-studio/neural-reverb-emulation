@@ -61,6 +61,7 @@ stages:
     - train.use_noise
     - train.use_wn
     - train.use_batch_norm
+    - train.use_residual
     - metrics.loss_function
     - metrics.additional_mse
     - metrics.additional_spec

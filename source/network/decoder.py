@@ -34,7 +34,7 @@ class ResidualStack(nn.Module):
         return x
 
 class DecoderTCNBlock(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size, dilation, activation=True, use_skip=True, use_wn=True):
+    def __init__(self, in_channels, out_channels, kernel_size, dilation, activation=True, use_skip=True, use_wn=True, use_residual=True):
         super().__init__()
         if use_wn:
             self.conv = wn(torch.nn.ConvTranspose1d(
@@ -69,13 +69,15 @@ class DecoderTCNBlock(nn.Module):
         self.kernel_size = kernel_size
         self.dilation = dilation
         self.use_skip = use_skip
+        self.use_residual = use_residual
 
     def forward(self, x, skip=None):
         x = self.conv(x)
         if hasattr(self, "act"):
             x = self.act(x)
         
-        x = self.residual_stack(x)
+        if self.use_residual:
+            x = self.residual_stack(x)
 
         if self.use_skip:
             gate = self.sigmoid(self.gate(torch.cat([x, skip], dim=1)))
@@ -113,7 +115,7 @@ class NoiseGenerator(nn.Module):
         return noise.sum(dim=1, keepdim=True)
 
 class DecoderTCN(nn.Module):
-    def __init__(self, n_outputs=1, n_blocks=10, kernel_size=13, n_channels=64, dilation_growth=4, latent_dim=16, use_kl=False, use_skip=True, use_noise=True, noise_ratios=[4], noise_bands=4, use_wn=True):
+    def __init__(self, n_outputs=1, n_blocks=10, kernel_size=13, n_channels=64, dilation_growth=4, latent_dim=16, use_kl=False, use_skip=True, use_noise=True, noise_ratios=[4], noise_bands=4, use_wn=True, use_residual=True):    
         super().__init__()
         self.kernel_size = kernel_size
         self.n_channels = n_channels
@@ -144,9 +146,9 @@ class DecoderTCN(nn.Module):
             act = True
             dilation = dilation_growth ** (n_blocks - n)
             if (n+1) != n_blocks:
-                self.blocks.append(DecoderTCNBlock(in_ch, out_ch, kernel_size, dilation, activation=act, use_skip=use_skip, use_wn=use_wn))
+                self.blocks.append(DecoderTCNBlock(in_ch, out_ch, kernel_size, dilation, activation=act, use_skip=use_skip, use_wn=use_wn, use_residual=use_residual))
             else: 
-                self.blocks.append(DecoderTCNBlock(in_ch, out_ch, kernel_size, dilation, activation=act, use_skip=False, use_wn=use_wn))
+                self.blocks.append(DecoderTCNBlock(in_ch, out_ch, kernel_size, dilation, activation=act, use_skip=False, use_wn=use_wn, use_residual=use_residual))
             if (n+1) != n_blocks:
                 in_ch = out_ch # Update in_ch for the next block
 
