@@ -8,7 +8,7 @@ from network.tcn import TCN
 from network.training import train
 from network.testing import test
 from network.dataset import AudioDataset
-from network.metrics import spectral_distance, single_stft_loss, fft_loss
+from network.metrics import spectral_distance, single_stft_loss, fft_loss, CombinedLoss
 from network.CombinedModels import CombinedEncoderDecoder
 from network.latent import calculate_final_input_size
 from utils import logs, config
@@ -162,6 +162,8 @@ def main():
         criterion = single_stft_loss
     elif loss_function == "fft_loss":
         criterion = fft_loss
+    elif loss_function == "combined":
+        criterion = CombinedLoss(mse_weight=100.0, spectral_weight=0.01)
     else:
         raise ValueError(f"Unknown loss function: {loss_function}")
 

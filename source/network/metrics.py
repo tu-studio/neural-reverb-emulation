@@ -61,3 +61,16 @@ def fft_loss(x, y):
     y_fft = torch.fft.fft(y)
     
     return lin_distance(x_fft.abs(), y_fft.abs())
+
+
+class CombinedLoss(torch.nn.Module):
+    def __init__(self, mse_weight=1.0, spectral_weight=0.1):
+        super(CombinedLoss, self).__init__()
+        self.mse_loss = torch.nn.MSELoss()
+        self.mse_weight = mse_weight
+        self.spectral_weight = spectral_weight
+
+    def forward(self, output, target):
+        mse = self.mse_loss(output, target)
+        spec_dist = spectral_distance(output, target)
+        return self.mse_weight * mse + self.spectral_weight * spec_dist
