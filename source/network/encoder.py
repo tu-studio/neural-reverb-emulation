@@ -1,23 +1,25 @@
 import torch
+import torch.nn.utils.weight_norm as wn
 
 class EncoderTCNBlock(torch.nn.Module):
   def __init__(self, in_channels, out_channels, kernel_size, dilation, activation=True):
     super().__init__()
-    self.conv = torch.nn.Conv1d(
+    self.conv = wn(torch.nn.Conv1d(
         in_channels, 
         out_channels, 
         kernel_size, 
         dilation=dilation, 
         padding=0,
-        bias=True)
-    # Activation function
+        bias=True))
+    self.bn = torch.nn.BatchNorm1d(out_channels)
     if activation:
-      self.act = torch.nn.PReLU()
+        self.act = torch.nn.PReLU()
     self.kernel_size = kernel_size
     self.dilation = dilation
 
   def forward(self, x):
     x = self.conv(x)
+    x = self.bn(x)
     if hasattr(self, "act"):
       x = self.act(x)
     return x
@@ -49,8 +51,8 @@ class EncoderTCN(torch.nn.Module):
         in_ch = out_ch  # Update in_ch for the next block
 
     # Use 1D convolutions to compute mean and log-variance
-    self.conv_mu = torch.nn.Conv1d(in_ch, latent_dim, 1)
-    self.conv_logvar = torch.nn.Conv1d(in_ch, latent_dim, 1)
+    self.conv_mu = wn(torch.nn.Conv1d(in_ch, latent_dim, 1))
+    self.conv_logvar = wn(torch.nn.Conv1d(in_ch, latent_dim, 1))
 
   def forward(self, x):
     encoder_outputs = [x]  # Include input as first element

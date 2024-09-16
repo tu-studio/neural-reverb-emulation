@@ -2,17 +2,18 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
+import torch.nn.utils.weight_norm as wn
 
 class DecoderTCNBlock(torch.nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size, dilation, activation=True, use_skip=True):
         super().__init__()
-        self.conv = torch.nn.ConvTranspose1d(
+        self.conv = wn(torch.nn.ConvTranspose1d(
             in_channels, 
             out_channels, 
             kernel_size, 
             dilation=dilation, 
             padding=0,
-            bias=True)
+            bias=True))
         torch.nn.init.xavier_uniform_(self.conv.weight)
         torch.nn.init.zeros_(self.conv.bias)
 
@@ -25,7 +26,7 @@ class DecoderTCNBlock(torch.nn.Module):
         # torch.nn.init.xavier_uniform_(self.res.weight)
 
         # Learnable parameter for scaling the skip connection
-        self.gate = torch.nn.Conv1d(out_channels + out_channels, out_channels, 1)
+        self.gate = wn(torch.nn.Conv1d(out_channels + out_channels, out_channels, 1))
         self.sigmoid = torch.nn.Sigmoid()
 
         self.kernel_size = kernel_size
@@ -52,12 +53,12 @@ class NoiseGenerator(nn.Module):
         current_channels = n_channels
         for i in range(3):  # Reduce the number of steps
             layers.append(
-                nn.Conv1d(
+                wn(nn.Conv1d(
                     current_channels,
                     max(current_channels // 2, noise_bands),
                     kernel_size=3,
                     padding=1
-                )
+                ))
             )
             if i < 2:  # No activation on the last layer
                 layers.append(nn.LeakyReLU(0.2))
@@ -84,7 +85,7 @@ class DecoderTCN(nn.Module):
 
         # Add a convolutional layer to leave latent space
         initial_channels = n_channels * (2 ** (n_blocks - 1))
-        self.conv_decode = torch.nn.Conv1d(latent_dim, initial_channels, 1)
+        self.conv_decode = wn(torch.nn.Conv1d(latent_dim, initial_channels, 1))
 
         self.blocks = torch.nn.ModuleList()
 
