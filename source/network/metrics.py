@@ -14,7 +14,7 @@ def multiscale_stft(signal, scales, overlap):
         overlap between windows ( 0 - 1 )
     """
     b, c, t = signal.shape
-    signal = signal.view(b * c, t)
+    signal = signal.contiguous().reshape(b * c, t)
     stfts = []
     for s in scales:
         S = torch.stft(
