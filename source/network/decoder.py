@@ -5,15 +5,24 @@ import numpy as np
 import torch.nn.utils.weight_norm as wn
 
 class DecoderTCNBlock(torch.nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size, dilation, activation=True, use_skip=True):
+    def __init__(self, in_channels, out_channels, kernel_size, dilation, activation=True, use_skip=True, use_wn=True):
         super().__init__()
-        self.conv = wn(torch.nn.ConvTranspose1d(
-            in_channels, 
-            out_channels, 
-            kernel_size, 
-            dilation=dilation, 
-            padding=0,
-            bias=True))
+        if use_wn:
+            self.conv = wn(torch.nn.ConvTranspose1d(
+                in_channels, 
+                out_channels, 
+                kernel_size, 
+                dilation=dilation, 
+                padding=0,
+                bias=True))
+        else:
+            self.conv = torch.nn.ConvTranspose1d(
+                in_channels, 
+                out_channels, 
+                kernel_size, 
+                dilation=dilation, 
+                padding=0,
+                bias=True)
         torch.nn.init.xavier_uniform_(self.conv.weight)
         torch.nn.init.zeros_(self.conv.bias)
 
@@ -26,7 +35,11 @@ class DecoderTCNBlock(torch.nn.Module):
         # torch.nn.init.xavier_uniform_(self.res.weight)
 
         # Learnable parameter for scaling the skip connection
-        self.gate = wn(torch.nn.Conv1d(out_channels + out_channels, out_channels, 1))
+        if use_wn:
+            self.gate = wn(torch.nn.Conv1d(out_channels + out_channels, out_channels, 1))
+        else:
+            self.gate = torch.nn.Conv1d(out_channels + out_channels, out_channels, 1)
+    
         self.sigmoid = torch.nn.Sigmoid()
 
         self.kernel_size = kernel_size
@@ -73,7 +86,7 @@ class NoiseGenerator(nn.Module):
         return noise.sum(dim=1, keepdim=True)
 
 class DecoderTCN(nn.Module):
-    def __init__(self, n_outputs=1, n_blocks=10, kernel_size=13, n_channels=64, dilation_growth=4, latent_dim=16, use_kl=False, use_skip=True, use_noise=True, noise_ratios=[4], noise_bands=4):
+    def __init__(self, n_outputs=1, n_blocks=10, kernel_size=13, n_channels=64, dilation_growth=4, latent_dim=16, use_kl=False, use_skip=True, use_noise=True, noise_ratios=[4], noise_bands=4, use_wn=True):
         super().__init__()
         self.kernel_size = kernel_size
         self.n_channels = n_channels
@@ -104,9 +117,9 @@ class DecoderTCN(nn.Module):
             act = True
             dilation = dilation_growth ** (n_blocks - n)
             if (n+1) != n_blocks:
-                self.blocks.append(DecoderTCNBlock(in_ch, out_ch, kernel_size, dilation, activation=act, use_skip=use_skip))
+                self.blocks.append(DecoderTCNBlock(in_ch, out_ch, kernel_size, dilation, activation=act, use_skip=use_skip, use_wn=use_wn))
             else: 
-                self.blocks.append(DecoderTCNBlock(in_ch, out_ch, kernel_size, dilation, activation=act, use_skip=False))
+                self.blocks.append(DecoderTCNBlock(in_ch, out_ch, kernel_size, dilation, activation=act, use_skip=False, use_wn=use_wn))
             if (n+1) != n_blocks:
                 in_ch = out_ch # Update in_ch for the next block
 

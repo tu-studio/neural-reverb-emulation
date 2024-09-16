@@ -46,6 +46,8 @@ def main():
     use_adversarial = params["train"]["use_adversarial"]
     gan_loss = params["gan"]["loss_type"]
     use_noise = params["train"]["use_noise"]
+    use_wn = params["train"]["use_wn"]
+    use_batch_norm = params["train"]["use_batch_norm"]
     additional_metrics = [ additional_spec ,additional_stft, additional_fft, additional_mse]
 
     final_size = calculate_final_input_size(input_size, n_bands, dilation_growth, n_blocks, kernel_size)
@@ -89,7 +91,9 @@ def main():
             dilation_growth=dilation_growth, 
             n_channels=n_channels,
             latent_dim=latent_dim,
-            use_kl=use_kl)
+            use_kl=use_kl,
+            use_wn=use_wn,
+            use_batch_norm=use_batch_norm)
         
         decoder = DecoderTCN(
             n_outputs=n_bands,
@@ -100,7 +104,8 @@ def main():
             latent_dim=latent_dim,
             use_kl=use_kl,
             use_skip=use_skip,
-            use_noise=use_noise)
+            use_noise=use_noise,
+            use_wn=use_wn)
         
         random_input = torch.randn(1, n_bands, int(2**math.ceil(math.log2(input_size))/n_bands))
         random_skips = []
