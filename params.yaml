@@ -26,8 +26,9 @@ train:
   use_wn: true
   use_batch_norm: true
   use_residual: true
+  activation: 'leaky_relu' # Options: 'prelu', 'leaky_relu'
 metrics:
-  loss_function: 'combined'  # Options: 'mse', 'spectral_distance', 'single_stft_loss', 'fft_loss'
+  loss_function: 'combined'  # Options: 'mse', 'spectral_distance', 'single_stft_loss', 'fft_loss', 'combined'
   additional_mse: true
   additional_spec: true
   additional_stft: true

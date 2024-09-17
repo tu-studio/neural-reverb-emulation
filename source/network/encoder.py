@@ -2,7 +2,7 @@ import torch
 import torch.nn.utils.weight_norm as wn
 
 class EncoderTCNBlock(torch.nn.Module):
-  def __init__(self, in_channels, out_channels, kernel_size, dilation, activation=True, use_wn=True, use_batch_norm=True):
+  def __init__(self, in_channels, out_channels, kernel_size, dilation, activation="prelu", use_wn=True, use_batch_norm=True):
     super().__init__()
     if use_wn:
       self.conv = wn(torch.nn.Conv1d(
@@ -22,8 +22,9 @@ class EncoderTCNBlock(torch.nn.Module):
           bias=True)
           
     self.bn = torch.nn.BatchNorm1d(out_channels)
-    if activation:
-        self.act = torch.nn.PReLU()
+    self.activation = activation
+    self.prelu = torch.nn.PReLU()
+    self.leaky_relu = torch.nn.LeakyReLU(0.2)
     self.kernel_size = kernel_size
     self.dilation = dilation
     self.use_batch_norm = use_batch_norm
@@ -32,12 +33,14 @@ class EncoderTCNBlock(torch.nn.Module):
     x = self.conv(x)
     if self.use_batch_norm:
       x = self.bn(x)
-    if hasattr(self, "act"):
-      x = self.act(x)
+    if self.activation == 'leaky_relu':
+      x = self.leaky_relu(x)
+    elif self.activation == 'prelu':
+      x = self.prelu(x)
     return x
 
 class EncoderTCN(torch.nn.Module):
-  def __init__(self, n_inputs=1, n_blocks=10, kernel_size=13, n_channels=64, dilation_growth=4, latent_dim=16, use_kl=False, use_wn=True, use_batch_norm=True):
+  def __init__(self, n_inputs=1, n_blocks=10, kernel_size=13, n_channels=64, dilation_growth=4, latent_dim=16, use_kl=False, use_wn=True, use_batch_norm=True, activation="prelu"):
     super().__init__()
     self.kernel_size = kernel_size
     self.n_channels = n_channels
@@ -58,7 +61,7 @@ class EncoderTCN(torch.nn.Module):
             act = True
         
         dilation = dilation_growth ** (n + 1)
-        self.blocks.append(EncoderTCNBlock(in_ch, out_ch, kernel_size, dilation, activation=act, use_wn=use_wn, use_batch_norm=use_batch_norm))
+        self.blocks.append(EncoderTCNBlock(in_ch, out_ch, kernel_size, dilation, activation=activation, use_wn=use_wn, use_batch_norm=use_batch_norm))
         print(f"Appended block {n} with in_ch={in_ch}, kernel_size={kernel_size}, out_ch={out_ch}, dilation={dilation}.")
         in_ch = out_ch  # Update in_ch for the next block
 

@@ -7,5 +7,5 @@
 - change metrics
 - better tensorboard
 - get the KL loss to converge
-- try out leaky relu/ other activations
+- try out leaky relu/ other activations --> Done
 - Stride/padding instead of dilation 
