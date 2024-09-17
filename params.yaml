@@ -10,7 +10,7 @@ train:
   n_inputs: 1
   n_bands: 16
   latent_dim: 64
-  epochs: 1
+  epochs: 10
   batch_size: 2
   kernel_size: 3
   n_blocks: 5
