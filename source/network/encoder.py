@@ -65,13 +65,12 @@ class EncoderTCN(torch.nn.Module):
         print(f"Appended block {n} with in_ch={in_ch}, kernel_size={kernel_size}, out_ch={out_ch}, dilation={dilation}.")
         in_ch = out_ch  # Update in_ch for the next block
 
-    # Use 1D convolutions to compute mean and log-variance
     if use_wn:
-      self.conv_mu = wn(torch.nn.Conv1d(in_ch, latent_dim, 1))
-      self.conv_logvar = wn(torch.nn.Conv1d(in_ch, latent_dim, 1))
+      self.conv_mean = wn(torch.nn.Conv1d(in_ch, latent_dim, 1))
+      self.conv_scale = wn(torch.nn.Conv1d(in_ch, latent_dim, 1))
     else:
-      self.conv_mu = torch.nn.Conv1d(in_ch, latent_dim, 1)
-      self.conv_logvar = torch.nn.Conv1d(in_ch, latent_dim, 1)
+      self.conv_mean = torch.nn.Conv1d(in_ch, latent_dim, 1)
+      self.conv_scale = torch.nn.Conv1d(in_ch, latent_dim, 1)
 
   def forward(self, x):
     encoder_outputs = [x]  # Include input as first element
@@ -80,17 +79,22 @@ class EncoderTCN(torch.nn.Module):
         encoder_outputs.append(x)
     
     if self.use_kl:
-        # Compute mean and log-variance
-        mu = torch.tanh(self.conv_mu(x))
-        logvar = torch.nn.functional.softplus(self.conv_logvar(x))
-        return mu, logvar, encoder_outputs
+        mean = self.conv_mean(x)
+        scale = self.conv_scale(x)
+        return mean, scale, encoder_outputs
     return encoder_outputs
 
-  def reparameterize(self, mu, logvar):
+  def reparameterize(self, mean, scale):
       """Reparameterization trick to sample from N(mu, var) from N(0,1)."""
-      std = torch.exp(0.5 * logvar)
+      std = torch.nn.functional.softplus(scale) + 1e-4
+      var = std * std
+      logvar = torch.log(var)
+
       eps = torch.randn_like(std)
-      return mu + eps * std
+      z = mean + eps * std
+
+      kl = (mean * mean + var - logvar - 1).sum(1).mean()
+      return z, kl
 
   def compute_receptive_field(self):
       """Compute the receptive field in samples."""

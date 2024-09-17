@@ -90,6 +90,8 @@ class DecoderTCNBlock(nn.Module):
         elif self.activation == 'prelu':
             x = self.prelu(x)
         
+        # print(x.shape)
+
         if self.use_residual:
             x = self.residual_stack(x)
 
@@ -171,7 +173,6 @@ class DecoderTCN(nn.Module):
 
     def forward(self, x, skips):
         if self.use_kl:
-            print(x.shape)
             x = self.conv_decode(x)
 
         for i, (block, skip) in enumerate(zip(self.blocks, skips)):

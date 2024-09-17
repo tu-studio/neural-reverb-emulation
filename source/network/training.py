@@ -4,11 +4,13 @@ import torch.optim as optim
 from torch.nn.utils import clip_grad_norm_
 from network.ravepqmf import PQMF, center_pad_next_pow_2
 from network.metrics import spectral_distance, single_stft_loss, fft_loss
+from network.core import get_beta_kl_cyclic_annealed
 from utils import config
 import os
 from tqdm import tqdm
+import numpy as np
 
-def train(encoder, decoder, discriminator, train_loader, val_loader, criterion, optimizer, d_optimizer, scheduler, tensorboard_writer, num_epochs=25, device='cpu', n_bands=64, use_kl=False, use_adversarial=False, sample_rate=44100, additional_metrics=None, gan_loss=None):
+def train(encoder, decoder, discriminator, train_loader, val_loader, criterion, optimizer, d_optimizer, scheduler, tensorboard_writer, num_epochs=25, device='cpu', n_bands=64, use_kl=False, use_adversarial=False, sample_rate=44100, additional_metrics=None, gan_loss=None, min_kl=1e-4, max_kl=5e-1, warmup=1000):
     encoder.to(device)
     if decoder:
         decoder.to(device)
@@ -24,6 +26,8 @@ def train(encoder, decoder, discriminator, train_loader, val_loader, criterion, 
 
     # Create a progress bar for the entire training process
     progress_bar = tqdm(total=total_batches, desc="Training Progress")
+
+    global_step = 0
 
     for epoch in range(num_epochs):
         #Train mode
@@ -66,9 +70,9 @@ def train(encoder, decoder, discriminator, train_loader, val_loader, criterion, 
                 # Encoder-Decoder architecture
                 if use_kl:
                     mu, logvar, encoder_outputs = encoder(dry_audio_decomposed)
-                    z = encoder.reparameterize(mu, logvar)
-                    kl_div = (-0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())) / mu.shape[-1]
-                    train_epoch_kl_div += kl_div
+                    encoder_outputs.pop()
+                    z, kl_div = encoder.reparameterize(mu, logvar)
+                    train_epoch_kl_div += kl_div.item()
                 else:
                     encoder_outputs = encoder(dry_audio_decomposed)
                     z = encoder_outputs.pop()
@@ -81,8 +85,7 @@ def train(encoder, decoder, discriminator, train_loader, val_loader, criterion, 
                 output_decomposed = encoder(dry_audio_decomposed)
                 wet_audio_decomposed = wet_audio_decomposed[..., rf-1:]
             
-            
-            loss = criterion(output_decomposed , wet_audio_decomposed)
+            loss = criterion(output_decomposed, wet_audio_decomposed)
 
             if n_bands > 1:
                 dry = pqmf.inverse(dry_audio_decomposed)
@@ -90,15 +93,21 @@ def train(encoder, decoder, discriminator, train_loader, val_loader, criterion, 
                 wet = pqmf.inverse(wet_audio_decomposed)
             else:
                 output = output_decomposed
-                wet =  wet_audio_decomposed
+                wet = wet_audio_decomposed
 
-
-            train_epoch_criterion += loss
+            train_epoch_criterion += loss.item()
             
             if use_kl:
-                loss += kl_div
+                beta = get_beta_kl_cyclic_annealed(
+                    step=global_step,
+                    cycle_size=5e4,
+                    warmup=warmup // 2,
+                    min_beta=min_kl,
+                    max_beta=max_kl,
+                )
+                loss += beta * kl_div
 
-            train_epoch_loss += loss 
+            train_epoch_loss += loss.item()
 
             # Backward pass and optimization
             loss.backward()
@@ -107,6 +116,8 @@ def train(encoder, decoder, discriminator, train_loader, val_loader, criterion, 
             # Update progress bar
             progress_bar.update(1)
             progress_bar.set_postfix({'epoch': f'{epoch + 1}/{num_epochs}', 'loss': f'{loss.item():.4f}'})
+
+            global_step += 1
 
         scheduler.step()
 
@@ -117,26 +128,27 @@ def train(encoder, decoder, discriminator, train_loader, val_loader, criterion, 
 
         # Log loss
         if epoch % 5 == 1:
-            tensorboard_writer.add_scalar("Loss/ training loss", train_avg_epoch_loss, epoch)
-            tensorboard_writer.add_scalar("Loss/ training criterion", train_avg_epoch_loss_criterion, epoch)
+            tensorboard_writer.add_scalar("Loss/training loss", train_avg_epoch_loss, epoch)
+            tensorboard_writer.add_scalar("Loss/training criterion", train_avg_epoch_loss_criterion, epoch)
             if use_kl:
                 tensorboard_writer.add_scalar("Loss/training kl_div", train_avg_epoch_kl_div, epoch)
+                tensorboard_writer.add_scalar("Loss/beta", beta, epoch)
             
             if additional_metrics:
                 for (i, metric_name) in enumerate(additional_metrics):
                     if metric_name and i == 0:
                         metric_value = spectral_distance(output_decomposed, wet_audio_decomposed)
-                        tensorboard_writer.add_scalar(f"Metrics/ spectral distance", metric_value, epoch)
+                        tensorboard_writer.add_scalar(f"Metrics/spectral distance", metric_value, epoch)
                     elif metric_name and i == 1: 
                         metric_value = single_stft_loss(output_decomposed, wet_audio_decomposed)
-                        tensorboard_writer.add_scalar(f"Metrics/ stft loss ", metric_value, epoch)
+                        tensorboard_writer.add_scalar(f"Metrics/stft loss ", metric_value, epoch)
                     elif metric_name and i == 2: 
                         metric_value = fft_loss(output_decomposed, wet_audio_decomposed)
-                        tensorboard_writer.add_scalar(f"Metrics/ fft loss", metric_value, epoch)
+                        tensorboard_writer.add_scalar(f"Metrics/fft loss", metric_value, epoch)
                     elif metric_name and i == 3:
                         mse_loss = torch.nn.MSELoss()
                         metric_value = mse_loss(output_decomposed, wet_audio_decomposed)
-                        tensorboard_writer.add_scalar(f"Metrics/ MSE", metric_value, epoch)
+                        tensorboard_writer.add_scalar(f"Metrics/MSE", metric_value, epoch)
                     else:
                         continue
 
@@ -151,7 +163,7 @@ def train(encoder, decoder, discriminator, train_loader, val_loader, criterion, 
                 tensorboard_writer.add_audio("Audio/TCN_Target", wet_audio[0].cpu(), epoch, sample_rate=sample_rate)
                 tensorboard_writer.add_audio("Audio/TCN_output", output[0].cpu(), epoch, sample_rate=sample_rate)
             
-        tensorboard_writer.step()
+        tensorboard_writer.flush()
 
         
 

@@ -10,14 +10,14 @@ train:
   n_inputs: 1
   n_bands: 16
   latent_dim: 64
-  epochs: 750
+  epochs: 1
   batch_size: 2
   kernel_size: 3
   n_blocks: 5
   dilation_growth: 6
   n_channels: 32
   lr: 0.0001
-  use_kl: false
+  use_kl: true
   use_skip: true
   use_tcn: false
   use_pqmf: true

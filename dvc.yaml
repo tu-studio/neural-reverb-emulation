@@ -33,6 +33,7 @@ stages:
     - source/network/tcn.py
     - source/network/CombinedModels.py
     - source/network/latent.py
+    - source/network/core.py
     - source/network/discriminator.py
     - data/processed/
     params:
