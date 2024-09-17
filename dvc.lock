@@ -5,61 +5,106 @@ stages:
     deps:
     - path: data/processed/
       hash: md5
-      md5: 64793a00435610abbcd24e02ea03773f.dir
+      md5: 22b4026dfc1ab28224e5d9854bb223f9.dir
       size: 743300167
       nfiles: 3
     - path: source/network/
       hash: md5
-      md5: 942bd26cda89270c31ff21160032bc27.dir
-      size: 32837
-      nfiles: 8
+      md5: f04ceb8852ae05b273349b657bb9df46.dir
+      size: 110650
+      nfiles: 22
+    - path: source/network/CombinedModels.py
+      hash: md5
+      md5: cde5906e62ae430a961d3bb52fe3095c
+      size: 599
     - path: source/network/dataset.py
       hash: md5
       md5: 6a33e657139e21b977f4d2deb79bf1e4
       size: 4231
+    - path: source/network/discriminator.py
+      hash: md5
+      md5: 4b6fee81585917729a78760034404e71
+      size: 1285
+    - path: source/network/latent.py
+      hash: md5
+      md5: c5da925c66b5dd09774bf4c521203281
+      size: 695
     - path: source/network/metrics.py
       hash: md5
-      md5: edf8322a9643f164e7382b8a38ef00ae
-      size: 1162
+      md5: cdc7bfca0316cf52d2f32898e9186c07
+      size: 2156
     - path: source/network/ravepqmf.py
       hash: md5
       md5: ff004d5afed02958b85ef7f204a0545f
       size: 6965
     - path: source/network/tcn.py
       hash: md5
-      md5: 865b60460ae2b59dfbeba6517788e12d
-      size: 2163
+      md5: 19a996b567eeb956edf96080d4c8a085
+      size: 3121
     - path: source/network/testing.py
       hash: md5
-      md5: 1cf9d854e6a32543876daf71a03c7b6d
-      size: 3701
+      md5: 46454ee796e16b3515830ccd4c838373
+      size: 3849
     - path: source/network/training.py
       hash: md5
-      md5: ec1ccb91860e86a33d31c98bd7fd39bf
-      size: 8642
+      md5: a3b7d02645b0f3eb0a967d93a47c76b4
+      size: 15495
     - path: source/train.py
       hash: md5
-      md5: daa0fbad12ff76b65ba3c06b920a759b
-      size: 7251
+      md5: 556a7cf4fbcfb32761e73f0d40104a6e
+      size: 10467
     params:
       params.yaml:
-        general.input_size: 524288
+        discriminator.beta1: 0.5
+        discriminator.beta2: 0.999
+        discriminator.kernel_size: 4
+        discriminator.lr: 0.0002
+        discriminator.n_channels: 64
+        discriminator.n_layers: 1
+        discriminator.padding: 1
+        discriminator.stride: 2
+        gan.loss_type: hinge
+        general.input_size: 508032
         general.random_seed: 55
         general.sample_rate: 44100
-        train.batch_size: 32
+        metrics.additional_fft: true
+        metrics.additional_mse: true
+        metrics.additional_spec: true
+        metrics.additional_stft: true
+        metrics.loss_function: combined
+        train.batch_size: 2
         train.device_request: cuda
-        train.dilation_growth: 9
-        train.epochs: 1
+        train.dilation_growth: 15
+        train.epochs: 750
         train.input_file: data/processed/preprocessed_data.pt
-        train.kernel_size: 32
-        train.latent_dim: 128
-        train.lr: 0.001
-        train.n_bands: 16
+        train.kernel_size: 17
+        train.latent_dim: 64
+        train.lr: 0.0001
+        train.n_bands: 2
         train.n_blocks: 3
         train.n_channels: 32
         train.n_inputs: 1
         train.name: model
         train.scheduler_rate: 0.1
+        train.use_adversarial: false
+        train.use_batch_norm: false
         train.use_kl: false
+        train.use_noise: false
+        train.use_pqmf: true
+        train.use_residual: false
         train.use_skip: true
         train.use_tcn: false
+        train.use_wn: false
+  save_logs:
+    cmd: python3 source/utils/logs.py
+    outs:
+    - path: exp_logs/slurm
+      hash: md5
+      md5: 2520340153efb07e4ccc03913ebf3779.dir
+      size: 1139087366
+      nfiles: 432
+    - path: exp_logs/tensorboard
+      hash: md5
+      md5: c7211c09623addd7ac501a294a996f1b.dir
+      size: 0
+      nfiles: 1
