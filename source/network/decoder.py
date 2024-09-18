@@ -143,8 +143,17 @@ class DecoderTCN(nn.Module):
 
         # Add a convolutional layer to leave latent space
         initial_channels = n_channels * (2 ** (n_blocks - 1))
-        self.conv_decode = wn(torch.nn.Conv1d(latent_dim, initial_channels, 1))
-
+        if use_kl:
+            if use_wn:
+                self.conv_decode = wn(torch.nn.Conv1d(latent_dim, initial_channels, 1))
+            else:
+                self.conv_decode = torch.nn.Conv1d(latent_dim, initial_channels, 1)
+        else:
+            if use_wn:
+                self.conv_decode = wn(torch.nn.ConvTranspose1d(2 * latent_dim, initial_channels, 5, padding=2, groups=2))
+            else:
+                self.conv_decode = torch.nn.ConvTranspose1d(2 * latent_dim, initial_channels, 5, padding=2, groups=2)
+            
         self.blocks = torch.nn.ModuleList()
 
         in_ch = n_channels * (2 ** (n_blocks - 1))
@@ -172,8 +181,8 @@ class DecoderTCN(nn.Module):
             self.noise_generator = NoiseGenerator(n_outputs, noise_bands=noise_bands)
 
     def forward(self, x, skips):
-        if self.use_kl:
-            x = self.conv_decode(x)
+        
+        x = self.conv_decode(x)
 
         for i, (block, skip) in enumerate(zip(self.blocks, skips)):
             x = block(x, skip)

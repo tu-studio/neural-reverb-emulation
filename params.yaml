@@ -17,7 +17,7 @@ train:
   dilation_growth: 15
   n_channels: 32
   lr: 0.0001
-  use_kl: true
+  use_kl: false
   use_skip: true
   use_tcn: false
   use_pqmf: true

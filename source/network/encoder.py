@@ -68,9 +68,11 @@ class EncoderTCN(torch.nn.Module):
     if use_wn:
       self.conv_mean = wn(torch.nn.Conv1d(in_ch, latent_dim, 1))
       self.conv_scale = wn(torch.nn.Conv1d(in_ch, latent_dim, 1))
+      self.conv_latent = wn(torch.nn.Conv1d(in_ch, 2 * latent_dim, 5, padding=2, groups=2))
     else:
       self.conv_mean = torch.nn.Conv1d(in_ch, latent_dim, 1)
       self.conv_scale = torch.nn.Conv1d(in_ch, latent_dim, 1)
+      self.conv_latent = torch.nn.Conv1d(in_ch, 2 * latent_dim, 5, padding=2, groups=2)    
 
   def forward(self, x):
     encoder_outputs = [x]  # Include input as first element
@@ -82,7 +84,10 @@ class EncoderTCN(torch.nn.Module):
         mean = self.conv_mean(x)
         scale = self.conv_scale(x)
         return mean, scale, encoder_outputs
-    return encoder_outputs
+    else:
+        latent = self.conv_latent(x)  
+        encoder_outputs[-1] = latent  
+        return encoder_outputs
 
   def reparameterize(self, mean, scale):
       """Reparameterization trick to sample from N(mu, var) from N(0,1)."""
