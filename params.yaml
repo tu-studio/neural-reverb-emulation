@@ -6,15 +6,15 @@ train:
   input_file: data/processed/preprocessed_data.pt
   name: model
   scheduler_rate: 0.1
-  device_request: 'cuda'
+  device_request: cuda
   n_inputs: 1
   n_bands: 16
   latent_dim: 64
   epochs: 750
   batch_size: 2
   kernel_size: 3
-  n_blocks: 5
-  dilation_growth: 6
+  n_blocks: 6
+  dilation_growth: 4
   n_channels: 32
   lr: 0.0001
   use_kl: false
@@ -25,9 +25,9 @@ train:
   use_noise: false
   use_wn: true
   use_batch_norm: true
-  use_residual: true
+  use_residual: false
 metrics:
-  loss_function: 'combined'  # Options: 'mse', 'spectral_distance', 'single_stft_loss', 'fft_loss'
+  loss_function: mse         # Options: 'mse', 'spectral_distance', 'single_stft_loss', 'fft_loss'
   additional_mse: true
   additional_spec: true
   additional_stft: true
@@ -42,4 +42,4 @@ discriminator:
   stride: 2
   padding: 1
 gan:
-  loss_type: 'hinge'  # Options: 'hinge', 'square'
+  loss_type: hinge    # Options: 'hinge', 'square'
