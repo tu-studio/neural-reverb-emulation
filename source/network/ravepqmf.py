@@ -19,7 +19,8 @@ def reverse_half(x):
 def center_pad_next_pow_2(x):
     next_2 = 2**math.ceil(math.log2(x.shape[-1]))
     pad = next_2 - x.shape[-1]
-    return nn.functional.pad(x, (pad // 2, pad // 2 + int(pad % 2)))
+    return nn.functional.pad(x, (pad, 0))
+
 
 
 def make_odd(x):
