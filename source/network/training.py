@@ -203,7 +203,7 @@ def train(encoder, decoder, discriminator, train_loader, val_loader, criterion, 
                         mu, logvar, encoder_outputs = encoder(dry_audio_decomposed)
                         encoder_outputs.pop()
                         z, kl_div = encoder.reparameterize(mu, logvar)
-                        train_epoch_kl_div += kl_div
+                        val_epoch_kl_div += kl_div
                     else:
                         encoder_outputs = encoder(dry_audio_decomposed)
                         z = encoder_outputs.pop()
