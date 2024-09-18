@@ -65,6 +65,8 @@ stages:
     - train.use_residual
     - train.activation
     - metrics.loss_function
+    - metrics.combined_spectral_weight
+    - metrics.combined_mse_weight
     - metrics.additional_mse
     - metrics.additional_spec
     - metrics.additional_stft

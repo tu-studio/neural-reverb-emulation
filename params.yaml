@@ -29,6 +29,8 @@ train:
   activation: 'leaky_relu' # Options: 'prelu', 'leaky_relu'
 metrics:
   loss_function: 'combined'  # Options: 'mse', 'spectral_distance', 'single_stft_loss', 'fft_loss', 'combined'
+  combined_spectral_weight: 0.01
+  combined_mse_weight: 1000
   additional_mse: true
   additional_spec: true
   additional_stft: true

@@ -53,6 +53,8 @@ def main():
     use_batch_norm = params["train"]["use_batch_norm"]
     use_residual = params["train"]["use_residual"]
     activation = params["train"]["activation"]
+    combined_spectral_weight = params["metrics"]["combined_spectral_weight"]
+    combined_mse_weight = params["metrics"]["combined_mse_weight"]
     additional_metrics = [ additional_spec ,additional_stft, additional_fft, additional_mse]
 
     final_size = calculate_final_input_size(input_size, n_bands, dilation_growth, n_blocks, kernel_size)
@@ -187,7 +189,7 @@ def main():
     elif loss_function == "fft_loss":
         criterion = fft_loss
     elif loss_function == "combined":
-        criterion = CombinedLoss(mse_weight=100.0, spectral_weight=0.01)
+        criterion = CombinedLoss(mse_weight=combined_spectral_weight, spectral_weight=combined_spectral_weight)
     else:
         raise ValueError(f"Unknown loss function: {loss_function}")
 
