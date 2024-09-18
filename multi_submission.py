@@ -11,9 +11,9 @@ def calculate_final_input_size(input_size, n_bands, dilation_growth, n_blocks, k
     
     pqmf_size = padded_input_size // n_bands
     
-    rf = kernel_size - 1
-    for i in range(1, n_blocks + 1):
-        dilation = dilation_growth ** i
+    rf = 0
+    for i in range(n_blocks):
+        dilation = dilation_growth ** (i + 1)
         rf += (kernel_size - 1) * dilation
     
     final_size = pqmf_size - rf

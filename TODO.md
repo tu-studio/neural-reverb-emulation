@@ -7,6 +7,7 @@
 - change metrics to good ones with PQMF --> Done
 - better tensorboard
 - get the KL loss to converge ---> Better
-- Improved Model printing
+- Improved Model printing/ number of params depending on conditions
+- Improve adversaria loop especially with KL
 - try out leaky relu/ other activations --> Done
 - Stride/padding instead of dilation 
