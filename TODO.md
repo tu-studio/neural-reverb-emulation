@@ -5,7 +5,7 @@
 - batch norm/ weight norm --> Done
 - Residual stack --> Done
 - change metrics to good ones with PQMF --> Done
-- better tensorboard
+- better tensorboard --> Done
 - get the KL loss to converge ---> Better
 - Improved Model printing/ number of params depending on conditions
 - Improve adversaria loop especially with KL

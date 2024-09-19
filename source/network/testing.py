@@ -94,7 +94,7 @@ def test(encoder, decoder, test_loader, criterion, tensorboard_writer, device='c
         test_avg_kl_div = test_kl_div / len(test_loader)
 
     # Log final metrics
-    tensorboard_writer.add_scalar("Test Loss/Overall", test_avg_loss, 0)
+    tensorboard_writer.add_scalar("Test Loss/Total loss", test_avg_loss, 0)
     tensorboard_writer.add_scalar("Test Loss/Criterion", test_avg_criterion, 0)
     if use_kl:
         tensorboard_writer.add_scalar("Test Loss/KL Divergence", test_avg_kl_div, 0)
