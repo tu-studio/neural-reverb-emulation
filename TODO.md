@@ -11,5 +11,5 @@
 - Improve adversaria loop especially with KL
 - try out leaky relu/ other activations --> Done
 - Stride/padding instead of dilation 
-- Include stride in params.yaml
-- Fix stride size error
+- Include stride in params.yaml --> Done
+- Fix stride size error --> Done with avgPool
