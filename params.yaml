@@ -12,9 +12,9 @@ train:
   latent_dim: 64
   epochs: 1000
   batch_size: 2
-  kernel_size: 17
+  kernel_size: 13
   n_blocks: 3
-  dilation_growth: 15
+  dilation_growth: 12
   stride: 2
   dilate_conv: true
   n_channels: 32
