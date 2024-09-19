@@ -13,3 +13,5 @@
 - Stride/padding instead of dilation 
 - Include stride in params.yaml --> Done
 - Fix stride size error --> Done with avgPool
+- Investigae padding in encoder
+- get adversarial to work
