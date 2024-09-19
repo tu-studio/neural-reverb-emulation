@@ -9,7 +9,7 @@ train:
   device_request: 'cuda'
   n_inputs: 1
   n_bands: 2
-  latent_dim: 128
+  latent_dim: 64
   epochs: 1000
   batch_size: 2
   kernel_size: 17
