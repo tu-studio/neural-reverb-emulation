@@ -79,7 +79,7 @@ def main():
     # Create the discriminator with the new parameters
     discriminator = Discriminator(
         n_layers=params["discriminator"]["n_layers"],
-        base_channels=params["discriminator"]["n_channels"],
+        n_channels=params["discriminator"]["n_channels"],
         kernel_size=params["discriminator"]["kernel_size"],
         stride=params["discriminator"]["stride"],
         padding=params["discriminator"]["padding"],
