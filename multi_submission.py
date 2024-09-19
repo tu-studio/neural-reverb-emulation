@@ -54,7 +54,6 @@ def find_optimal_params(input_size, n_bands, n_blocks):
 def generate_hyperparams():
     configurations = [
         (2, 17, 3, 15),
-        (1, 13, 4, 10)
     ]
     # (1, 13, 4, 10)
     # (16, 3, 6, 4)
@@ -70,16 +69,19 @@ def generate_hyperparams():
     activation_options = ['prelu']
     combined_mse_weight_options = [100]
     dilate_conv_options = [True, False]
+    use_latent_options = [True, False]
+    latent_dim_options = [32, 64, 128, 256]
 
-    for (n_bands, kernel_size, n_blocks, dilation_growth), use_kl, use_adversarial, use_skips, use_noise, use_residual_stack, use_wn, use_batch_norm, loss_function, activation, combined_mse_weight, dilate_conv in itertools.product(
+    for (n_bands, kernel_size, n_blocks, dilation_growth), use_kl, use_adversarial, use_skips, use_noise, use_residual_stack, use_wn, use_batch_norm, loss_function, activation, combined_mse_weight, dilate_conv, use_latent, latent_dim in itertools.product(
         configurations,
         use_kl_options, use_adversarial_options, use_skips_options, use_noise_options,
         use_residual_stack_options, use_wn_options, use_batch_norm_options,
-        loss_function_options, activation_options, combined_mse_weight_options, dilate_conv_options
+        loss_function_options, activation_options, combined_mse_weight_options, dilate_conv_options,
+        use_latent_options, latent_dim_options
     ):
-        yield n_bands, kernel_size, n_blocks, dilation_growth, use_kl, use_adversarial, use_skips, use_noise, use_residual_stack, use_wn, use_batch_norm, loss_function, activation, combined_mse_weight, dilate_conv
+        yield n_bands, kernel_size, n_blocks, dilation_growth, use_kl, use_adversarial, use_skips, use_noise, use_residual_stack, use_wn, use_batch_norm, loss_function, activation, combined_mse_weight, dilate_conv, use_latent, latent_dim
 
-def submit_batch_job(n_bands, kernel_size, n_blocks, dilation_growth, use_kl, use_adversarial, use_skips, use_noise, use_residual_stack, use_wn, use_batch_norm, loss_function, activation, combined_mse_weight, dilate_conv):
+def submit_batch_job(n_bands, kernel_size, n_blocks, dilation_growth, use_kl, use_adversarial, use_skips, use_noise, use_residual_stack, use_wn, use_batch_norm, loss_function, activation, combined_mse_weight, dilate_conv, use_latent, latent_dim):
     env = {
         **os.environ,
         "EXP_PARAMS": (f"-S train.n_bands={n_bands} "
@@ -96,9 +98,11 @@ def submit_batch_job(n_bands, kernel_size, n_blocks, dilation_growth, use_kl, us
                        f"-S metrics.loss_function={loss_function} "
                        f"-S train.activation={activation} "
                        f"-S metrics.combined_mse_weight={combined_mse_weight} "
-                       f"-S train.dilate_conv={str(dilate_conv).lower()}")
+                       f"-S train.dilate_conv={str(dilate_conv).lower()} "
+                       f"-S train.use_latent={str(use_latent).lower()} "
+                       f"-S train.latent_dim={latent_dim}")
     }
-    subprocess.run(['/usr/bin/bash', '-c', 'sbatch slurm_job.sh'], env=env)
+    # subprocess.run(['/usr/bin/bash', '-c', 'sbatch slurm_job.sh'], env=env)
     
     # Calculate compression
     input_size = 508032 
@@ -108,7 +112,7 @@ def submit_batch_job(n_bands, kernel_size, n_blocks, dilation_growth, use_kl, us
           f"use_kl={use_kl}, use_adversarial={use_adversarial}, use_skips={use_skips}, use_noise={use_noise}, "
           f"use_residual={use_residual_stack}, use_wn={use_wn}, use_batch_norm={use_batch_norm}, "
           f"loss_function={loss_function}, activation={activation}, combined_mse_weight={combined_mse_weight}, "
-          f"dilate_conv={dilate_conv}")
+          f"dilate_conv={dilate_conv}, use_latent={use_latent}, latent_dim={latent_dim}")
     print(f"Compression: input_length={compression_result['input_length']}, "
           f"output_length={compression_result['output_length']}, "
           f"compression_rate={compression_result['compression_rate']:.2f}x")
