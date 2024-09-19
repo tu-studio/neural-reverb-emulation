@@ -281,22 +281,38 @@ def train(encoder, decoder, discriminator, train_loader, val_loader, criterion, 
                 # Real samples
                 real_output, real_features = discriminator(wet_audio)
 
-                # Fake samples
-                with torch.no_grad():
-                    if use_kl:
-                        mu, logvar, encoder_outputs = encoder(dry_audio)
-                        z = encoder.reparameterize(mu, logvar)
-                        print(z.shape)
-                    else:
-                        encoder_outputs = encoder(dry_audio)
-                        z = encoder_outputs.pop()
-                    encoder_outputs = encoder_outputs[::-1]
-
-                output_decomposed = decoder(z, encoder_outputs)
                 if n_bands > 1:
+                    dry_audio = center_pad_next_pow_2(dry_audio)
+                    wet_audio = center_pad_next_pow_2(wet_audio)
+
+                    # Apply PQMF to input
+                    dry_audio_decomposed = pqmf(dry_audio)
+                    wet_audio_decomposed = pqmf(wet_audio)
+                else: 
+                    dry_audio_decomposed = dry_audio
+                    wet_audio_decomposed = wet_audio
+            
+                dry_audio_decomposed, wet_audio_decomposed = dry_audio_decomposed.to(device), wet_audio_decomposed.to(device)
+        
+                if use_kl:
+                    mu, logvar, encoder_outputs = encoder(dry_audio_decomposed)
+                    encoder_outputs.pop()
+                    z, kl_div = encoder.reparameterize(mu, logvar)
+                    train_epoch_kl_div += kl_div.item()
+                else:
+                    encoder_outputs = encoder(dry_audio_decomposed)
+                    z = encoder_outputs.pop()
+
+                encoder_outputs = encoder_outputs[::-1]
+                output_decomposed = decoder(z, encoder_outputs)
+
+                if n_bands > 1:
+                    dry = pqmf.inverse(dry_audio_decomposed)
                     output = pqmf.inverse(output_decomposed)
+                    wet = pqmf.inverse(wet_audio_decomposed)
                 else:
                     output = output_decomposed
+                    wet = wet_audio_decomposed
 
                 fake_output, fake_features = discriminator(output.detach())
 
