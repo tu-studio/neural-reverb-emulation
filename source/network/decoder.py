@@ -98,7 +98,8 @@ class DecoderTCNBlock(nn.Module):
             x = self.residual_stack(x)
 
         if self.use_skip:
-            gate = self.sigmoid(self.gate(torch.cat([x, skip], dim=1)))
+            skip_resized = torch.nn.functional.interpolate(skip, size=x.size(2), mode='linear', align_corners=False)
+            gate = self.sigmoid(self.gate(torch.cat([x, skip_resized], dim=1)))
             x = x + gate * skip
         return x
 
