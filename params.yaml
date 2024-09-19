@@ -12,10 +12,10 @@ train:
   latent_dim: 64
   epochs: 1000
   batch_size: 2
-  kernel_size: 13
+  kernel_size: 17
   n_blocks: 3
-  dilation_growth: 12
-  stride: 2
+  dilation_growth: 15
+  stride: 1
   dilate_conv: true
   n_channels: 32
   lr: 0.0001
@@ -30,9 +30,9 @@ train:
   use_residual: true
   activation: 'leaky_relu' # Options: 'prelu', 'leaky_relu'
 metrics:
-  loss_function: 'combined'  # Options: 'mse', 'spectral_distance', 'single_stft_loss', 'fft_loss', 'combined'
+  loss_function: 'spectral_distance'  # Options: 'mse', 'spectral_distance', 'single_stft_loss', 'fft_loss', 'combined'
   combined_spectral_weight: 0.01
-  combined_mse_weight: 1000
+  combined_mse_weight: 100
   additional_mse: true
   additional_spec: true
   additional_stft: true
