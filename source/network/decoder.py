@@ -45,7 +45,7 @@ class ResidualStack(nn.Module):
         return x
 
 class DecoderTCNBlock(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size, dilation, use_skip=True, use_wn=True, use_residual=True, activation='prelu'):
+    def __init__(self, in_channels, out_channels, kernel_size, dilation, use_skip=True, use_wn=True, use_residual=True, activation='prelu', stride=1):
         super().__init__()
         if use_wn:
             self.conv = wn(torch.nn.ConvTranspose1d(
@@ -54,7 +54,8 @@ class DecoderTCNBlock(nn.Module):
                 kernel_size, 
                 dilation=dilation, 
                 padding=0,
-                bias=True))
+                bias=True,
+                stride=stride))
         else:
             self.conv = torch.nn.ConvTranspose1d(
                 in_channels, 
@@ -62,7 +63,8 @@ class DecoderTCNBlock(nn.Module):
                 kernel_size, 
                 dilation=dilation, 
                 padding=0,
-                bias=True)
+                bias=True,
+                stride=stride)
         torch.nn.init.xavier_uniform_(self.conv.weight)
         torch.nn.init.zeros_(self.conv.bias)
 
@@ -131,7 +133,7 @@ class NoiseGenerator(nn.Module):
         return noise.sum(dim=1, keepdim=True)
 
 class DecoderTCN(nn.Module):
-    def __init__(self, n_outputs=1, n_blocks=10, kernel_size=13, n_channels=64, dilation_growth=4, latent_dim=16, use_kl=False, use_skip=True, use_noise=True, noise_ratios=[4], noise_bands=4, use_wn=True, use_residual=True, activation='prelu'):    
+    def __init__(self, n_outputs=1, n_blocks=10, kernel_size=13, n_channels=64, dilation_growth=4, latent_dim=16, use_kl=False, use_skip=True, use_noise=True, noise_ratios=[4], noise_bands=4, use_wn=True, use_residual=True, activation='prelu', stride=1, dilate_conv=False):    
         super().__init__()
         self.kernel_size = kernel_size
         self.n_channels = n_channels
@@ -150,9 +152,15 @@ class DecoderTCN(nn.Module):
                 self.conv_decode = torch.nn.Conv1d(latent_dim, initial_channels, 1)
         else:
             if use_wn:
-                self.conv_decode = wn(torch.nn.ConvTranspose1d(2 * latent_dim, initial_channels, 5, padding=2, groups=2))
+                if dilate_conv:
+                    self.conv_decode = wn(torch.nn.ConvTranspose1d(2 * latent_dim, initial_channels, kernel_size, padding=2, groups=2, dilation=dilation_growth**n_blocks))
+                else:
+                    self.conv_decode = wn(torch.nn.ConvTranspose1d(2 * latent_dim, initial_channels, kernel_size, padding=2, groups=2))
             else:
-                self.conv_decode = torch.nn.ConvTranspose1d(2 * latent_dim, initial_channels, 5, padding=2, groups=2)
+                if dilate_conv:
+                    self.conv_decode = torch.nn.ConvTranspose1d(2 * latent_dim, initial_channels, kernel_size, padding=2, groups=2, dilation=dilation_growth**n_blocks)
+                else:
+                    self.conv_decode = torch.nn.ConvTranspose1d(2 * latent_dim, initial_channels, kernel_size, padding=2, groups=2)
             
         self.blocks = torch.nn.ModuleList()
 
@@ -171,9 +179,9 @@ class DecoderTCN(nn.Module):
             act = True
             dilation = dilation_growth ** (n_blocks - n)
             if (n+1) != n_blocks:
-                self.blocks.append(DecoderTCNBlock(in_ch, out_ch, kernel_size, dilation, use_skip=use_skip, use_wn=use_wn, use_residual=use_residual, activation=activation))
+                self.blocks.append(DecoderTCNBlock(in_ch, out_ch, kernel_size, dilation, use_skip=use_skip, use_wn=use_wn, use_residual=use_residual, activation=activation, stride=stride))
             else: 
-                self.blocks.append(DecoderTCNBlock(in_ch, out_ch, kernel_size, dilation, use_skip=False, use_wn=use_wn, use_residual=use_residual, activation=activation))
+                self.blocks.append(DecoderTCNBlock(in_ch, out_ch, kernel_size, dilation, use_skip=False, use_wn=use_wn, use_residual=use_residual, activation=activation, stride=stride))
             if (n+1) != n_blocks:
                 in_ch = out_ch # Update in_ch for the next block
 

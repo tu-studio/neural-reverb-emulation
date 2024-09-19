@@ -2,7 +2,7 @@ import torch
 import torch.nn.utils.weight_norm as wn
 
 class EncoderTCNBlock(torch.nn.Module):
-  def __init__(self, in_channels, out_channels, kernel_size, dilation, activation="prelu", use_wn=True, use_batch_norm=True):
+  def __init__(self, in_channels, out_channels, kernel_size, dilation, activation="prelu", use_wn=True, use_batch_norm=True, stride=1):
     super().__init__()
     if use_wn:
       self.conv = wn(torch.nn.Conv1d(
@@ -11,7 +11,8 @@ class EncoderTCNBlock(torch.nn.Module):
           kernel_size, 
           dilation=dilation, 
           padding=0,
-          bias=True))
+          bias=True,
+          stride=stride))
     else: 
       self.conv = torch.nn.Conv1d(
           in_channels, 
@@ -19,7 +20,8 @@ class EncoderTCNBlock(torch.nn.Module):
           kernel_size, 
           dilation=dilation, 
           padding=0,
-          bias=True)
+          bias=True,
+          stride=stride)
           
     self.bn = torch.nn.BatchNorm1d(out_channels)
     self.activation = activation
@@ -40,7 +42,7 @@ class EncoderTCNBlock(torch.nn.Module):
     return x
 
 class EncoderTCN(torch.nn.Module):
-  def __init__(self, n_inputs=1, n_blocks=10, kernel_size=13, n_channels=64, dilation_growth=4, latent_dim=16, use_kl=False, use_wn=True, use_batch_norm=True, activation="prelu"):
+  def __init__(self, n_inputs=1, n_blocks=10, kernel_size=13, n_channels=64, dilation_growth=4, latent_dim=16, use_kl=False, use_wn=True, use_batch_norm=True, activation="prelu", stride=1, dilate_conv=False):
     super().__init__()
     self.kernel_size = kernel_size
     self.n_channels = n_channels
@@ -61,18 +63,24 @@ class EncoderTCN(torch.nn.Module):
             act = True
         
         dilation = dilation_growth ** (n + 1)
-        self.blocks.append(EncoderTCNBlock(in_ch, out_ch, kernel_size, dilation, activation=activation, use_wn=use_wn, use_batch_norm=use_batch_norm))
+        self.blocks.append(EncoderTCNBlock(in_ch, out_ch, kernel_size, dilation, activation=activation, use_wn=use_wn, use_batch_norm=use_batch_norm, stride=stride))
         print(f"Appended block {n} with in_ch={in_ch}, kernel_size={kernel_size}, out_ch={out_ch}, dilation={dilation}.")
         in_ch = out_ch  # Update in_ch for the next block
 
     if use_wn:
       self.conv_mean = wn(torch.nn.Conv1d(in_ch, latent_dim, 1))
       self.conv_scale = wn(torch.nn.Conv1d(in_ch, latent_dim, 1))
-      self.conv_latent = wn(torch.nn.Conv1d(in_ch, 2 * latent_dim, 5, padding=2, groups=2))
+      if dilate_conv:
+        self.conv_latent = wn(torch.nn.Conv1d(in_ch, 2 * latent_dim, kernel_size, dilation=dilation, padding=2, groups=2))
+      else:
+        self.conv_latent = wn(torch.nn.Conv1d(in_ch, 2 * latent_dim, kernel_size, padding=2, groups=2))
     else:
       self.conv_mean = torch.nn.Conv1d(in_ch, latent_dim, 1)
       self.conv_scale = torch.nn.Conv1d(in_ch, latent_dim, 1)
-      self.conv_latent = torch.nn.Conv1d(in_ch, 2 * latent_dim, 5, padding=2, groups=2)    
+      if dilate_conv:
+        self.conv_latent = torch.nn.Conv1d(in_ch, 2 * latent_dim, kernel_size, dilation=dilation, padding=2, groups=2)    
+      else:
+        self.conv_latent = torch.nn.Conv1d(in_ch, 2 * latent_dim, kernel_size, padding=2, groups=2)
 
   def forward(self, x):
     encoder_outputs = [x]  # Include input as first element
