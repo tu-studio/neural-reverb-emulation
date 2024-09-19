@@ -57,6 +57,7 @@ def main():
     combined_mse_weight = params["metrics"]["combined_mse_weight"]
     dilate_conv = params["train"]["dilate_conv"]
     stride = params["train"]["stride"]
+    use_latent = params["train"]["use_latent"]
     additional_metrics = [ additional_spec ,additional_stft, additional_fft, additional_mse]
 
     final_size = calculate_final_input_size(input_size, n_bands, dilation_growth, n_blocks, kernel_size)
@@ -105,7 +106,8 @@ def main():
             use_batch_norm=use_batch_norm,
             activation=activation,
             stride=stride,
-            dilate_conv=dilate_conv)
+            dilate_conv=dilate_conv,
+            use_latent=use_latent)
         
         decoder = DecoderTCN(
             n_outputs=n_bands,
@@ -121,7 +123,8 @@ def main():
             use_residual=use_residual,
             activation=activation,
             stride=stride,
-            dilate_conv=dilate_conv)
+            dilate_conv=dilate_conv,
+            use_latent=use_latent)
         
         random_input = torch.randn(1, n_bands, int(2**math.ceil(math.log2(input_size))/n_bands))
         random_skips = []

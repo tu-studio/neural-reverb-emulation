@@ -22,6 +22,7 @@ class EncoderTCNBlock(torch.nn.Module):
           padding=0,
           bias=True,
           stride=stride)
+  
           
     self.bn = torch.nn.BatchNorm1d(out_channels)
     self.activation = activation
@@ -30,6 +31,7 @@ class EncoderTCNBlock(torch.nn.Module):
     self.kernel_size = kernel_size
     self.dilation = dilation
     self.use_batch_norm = use_batch_norm
+    self.stride = stride
 
   def forward(self, x):
     x = self.conv(x)
@@ -42,7 +44,7 @@ class EncoderTCNBlock(torch.nn.Module):
     return x
 
 class EncoderTCN(torch.nn.Module):
-  def __init__(self, n_inputs=1, n_blocks=10, kernel_size=13, n_channels=64, dilation_growth=4, latent_dim=16, use_kl=False, use_wn=True, use_batch_norm=True, activation="prelu", stride=1, dilate_conv=False):
+  def __init__(self, n_inputs=1, n_blocks=10, kernel_size=13, n_channels=64, dilation_growth=4, latent_dim=16, use_kl=False, use_wn=True, use_batch_norm=True, activation="prelu", stride=1, dilate_conv=False, use_latent=False):
     super().__init__()
     self.kernel_size = kernel_size
     self.n_channels = n_channels
@@ -50,6 +52,7 @@ class EncoderTCN(torch.nn.Module):
     self.n_blocks = n_blocks
     self.use_kl = use_kl
     self.latent_dim = latent_dim
+    self.use_latent = use_latent
 
     self.blocks = torch.nn.ModuleList()
     print(f"Building EncoderTCN with {n_blocks} blocks")
@@ -71,16 +74,16 @@ class EncoderTCN(torch.nn.Module):
       self.conv_mean = wn(torch.nn.Conv1d(in_ch, latent_dim, 1))
       self.conv_scale = wn(torch.nn.Conv1d(in_ch, latent_dim, 1))
       if dilate_conv:
-        self.conv_latent = wn(torch.nn.Conv1d(in_ch, 2 * latent_dim, kernel_size, dilation=dilation, padding=2, groups=2))
+        self.conv_latent = wn(torch.nn.Conv1d(in_ch, latent_dim, kernel_size, dilation=dilation))
       else:
-        self.conv_latent = wn(torch.nn.Conv1d(in_ch, 2 * latent_dim, kernel_size, padding=2, groups=2))
+        self.conv_latent = wn(torch.nn.Conv1d(in_ch, latent_dim, kernel_size))
     else:
       self.conv_mean = torch.nn.Conv1d(in_ch, latent_dim, 1)
       self.conv_scale = torch.nn.Conv1d(in_ch, latent_dim, 1)
       if dilate_conv:
-        self.conv_latent = torch.nn.Conv1d(in_ch, 2 * latent_dim, kernel_size, dilation=dilation, padding=2, groups=2)    
+        self.conv_latent = torch.nn.Conv1d(in_ch, latent_dim, kernel_size, dilation=dilation)    
       else:
-        self.conv_latent = torch.nn.Conv1d(in_ch, 2 * latent_dim, kernel_size, padding=2, groups=2)
+        self.conv_latent = torch.nn.Conv1d(in_ch, latent_dim, kernel_size)
 
   def forward(self, x):
     encoder_outputs = [x]  # Include input as first element
@@ -93,8 +96,9 @@ class EncoderTCN(torch.nn.Module):
         scale = self.conv_scale(x)
         return mean, scale, encoder_outputs
     else:
-        latent = self.conv_latent(x)  
-        encoder_outputs[-1] = latent  
+        if self.use_latent:
+            latent = self.conv_latent(x)
+            encoder_outputs[-1] = latent 
         return encoder_outputs
 
   def reparameterize(self, mean, scale):

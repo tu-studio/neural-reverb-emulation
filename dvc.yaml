@@ -66,6 +66,7 @@ stages:
     - train.activation
     - train.stride
     - train.dilate_conv
+    - train.use_latent  
     - metrics.loss_function
     - metrics.combined_spectral_weight
     - metrics.combined_mse_weight
