@@ -10,7 +10,8 @@ class CombinedEncoderDecoder(nn.Module):
     def forward(self, x):
         if self.encoder.use_kl:
             mu, logvar, encoder_outputs = self.encoder(x)
-            z = self.encoder.reparameterize(mu, logvar)
+            encoder_outputs.pop()
+            z, _ = encoder.reparameterize(mu, logvar)
         else:
             encoder_outputs = self.encoder(x)
             z = encoder_outputs.pop()
