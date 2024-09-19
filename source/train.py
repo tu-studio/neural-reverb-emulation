@@ -155,7 +155,7 @@ def main():
 
         # Add the combined model graph to TensorBoard
         random_input = torch.randn(1, n_bands, int(2**math.ceil(math.log2(input_size))/n_bands))
-        # writer.add_graph(combined_model, random_input.to(device))
+        writer.add_graph(combined_model, random_input.to(device))
 
         # Setup optimizer
         model_params = list(encoder.parameters())
