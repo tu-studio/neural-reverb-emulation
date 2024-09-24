@@ -102,7 +102,7 @@ def submit_batch_job(n_bands, kernel_size, n_blocks, dilation_growth, use_kl, us
                        f"-S train.use_latent={str(use_latent).lower()} "
                        f"-S train.latent_dim={latent_dim}")
     }
-    # subprocess.run(['/usr/bin/bash', '-c', 'sbatch slurm_job.sh'], env=env)
+    subprocess.run(['/usr/bin/bash', '-c', 'sbatch slurm_job.sh'], env=env)
     
     # Calculate compression
     input_size = 508032 
