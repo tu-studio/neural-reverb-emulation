@@ -65,7 +65,7 @@ def main():
 
     # Create a SummaryWriter object to write the tensorboard logs
     tensorboard_path = logs.return_tensorboard_path()
-    metrics = {'Loss/ training loss': None, 'Test Loss/Overall': None}
+    metrics = {'Loss/training total loss': None, 'Test Loss/Total Loss': None}
     writer = logs.CustomSummaryWriter(log_dir=tensorboard_path, params=params, metrics=metrics)
 
     # Set a random seed for reproducibility across all devices. Add more devices if needed
