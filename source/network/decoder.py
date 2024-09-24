@@ -144,9 +144,15 @@ class DecoderTCN(nn.Module):
         self.use_skip = use_skip
         self.use_noise = use_noise
         self.use_latent = use_latent
+        self.latent_dim = latent_dim
 
         # Add a convolutional layer to leave latent space
         initial_channels = n_channels * (2 ** (n_blocks - 1))
+        self.initial_channels = initial_channels
+        if use_wn:
+            self.dense_expand = wn(torch.nn.Linear(latent_dim, initial_channels))
+        else:
+            self.dense_expand = wn(torch.nn.Linear(latent_dim, initial_channels))
         if use_kl:
             if use_wn:
                 self.conv_decode = wn(torch.nn.Conv1d(latent_dim, initial_channels, 1))
@@ -191,8 +197,15 @@ class DecoderTCN(nn.Module):
             self.noise_generator = NoiseGenerator(n_outputs, noise_bands=noise_bands)
 
     def forward(self, x, skips):
-        if self.use_latent or self.use_kl:
+        if self.use_latent == 'conv' or self.use_kl:
             x = self.conv_decode(x)
+        elif self.use_latent == 'dense':
+            batch_size, latent_dim, time_steps = x.shape
+            x = x.transpose(1, 2).contiguous()  # [batch_size, time_steps, latent_dim]
+            x = x.view(-1, self.latent_dim)  # [batch_size * time_steps, latent_dim]
+            x = self.dense_expand(x)  # [batch_size * time_steps, n_channels]
+            x = x.view(batch_size, time_steps, self.initial_channels)  # [batch_size, time_steps, n_channels]
+            x = x.transpose(1, 2)  # [batch_size, n_channels, time_steps]
 
         for i, (block, skip) in enumerate(zip(self.blocks, skips)):
             x = block(x, skip)

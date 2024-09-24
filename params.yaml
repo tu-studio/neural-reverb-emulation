@@ -21,7 +21,7 @@ train:
   lr: 0.0001
   use_kl: false
   use_skip: true
-  use_latent: true
+  use_latent: 'dense' # Options: 'dense', 'conv', "None"
   use_tcn: false
   use_pqmf: true
   use_adversarial: false

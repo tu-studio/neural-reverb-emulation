@@ -73,6 +73,7 @@ class EncoderTCN(torch.nn.Module):
     if use_wn:
       self.conv_mean = wn(torch.nn.Conv1d(in_ch, latent_dim, 1))
       self.conv_scale = wn(torch.nn.Conv1d(in_ch, latent_dim, 1))
+      self.dense_latent = wn(torch.nn.Linear(in_ch, latent_dim))
       if dilate_conv:
         self.conv_latent = wn(torch.nn.Conv1d(in_ch, latent_dim, kernel_size, dilation=dilation))
       else:
@@ -80,6 +81,7 @@ class EncoderTCN(torch.nn.Module):
     else:
       self.conv_mean = torch.nn.Conv1d(in_ch, latent_dim, 1)
       self.conv_scale = torch.nn.Conv1d(in_ch, latent_dim, 1)
+      self.dense_latent = torch.nn.Linear(in_ch, latent_dim)
       if dilate_conv:
         self.conv_latent = torch.nn.Conv1d(in_ch, latent_dim, kernel_size, dilation=dilation)    
       else:
@@ -96,9 +98,19 @@ class EncoderTCN(torch.nn.Module):
         scale = self.conv_scale(x)
         return mean, scale, encoder_outputs
     else:
-        if self.use_latent:
+        if self.use_latent == 'conv':
             latent = self.conv_latent(x)
             encoder_outputs[-1] = latent 
+        elif self.use_latent == 'dense':   
+            batch_size, channels, time_steps = x.shape
+            print(x.shape)
+            x = x.transpose(1, 2).contiguous()  # [batch_size, time_steps, channels]
+            x = x.view(-1, channels)  # [batch_size * time_steps, channels]
+            latent = self.dense_latent(x)  # [batch_size * time_steps, latent_dim]
+            latent = latent.view(batch_size, time_steps, self.latent_dim)  # [batch_size, time_steps, latent_dim]
+            latent = latent.transpose(1, 2)  # [batch_size, latent_dim, time_steps]
+            encoder_outputs[-1] = latent
+            print(f"Latent shape: {latent.shape}")
         return encoder_outputs
 
   def reparameterize(self, mean, scale):
