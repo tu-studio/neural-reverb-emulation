@@ -11,7 +11,7 @@ train:
   n_bands: 1
   latent_dim: 64
   epochs: 750
-  batch_size: 2
+  batch_size: 1
   kernel_size: 13
   n_blocks: 4
   dilation_growth: 10
