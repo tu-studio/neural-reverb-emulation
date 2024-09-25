@@ -15,3 +15,7 @@
 - Fix stride size error --> Done with avgPool
 - Investigae padding in encoder
 - get adversarial to work
+- take torch.tanh() out 
+- interpolation when same tensors
+- discriminator torch_no grad disappreance 
+-use flatten for dense layer
