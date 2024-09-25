@@ -64,6 +64,7 @@ stages:
     - train.use_residual
     - train.use_latent
     - train.dilate_conv
+    - train.activation
     - metrics.loss_function
     - metrics.additional_mse
     - metrics.additional_spec

@@ -5,7 +5,7 @@ import numpy as np
 import torch.nn.utils.weight_norm as wn
 
 class ResidualLayer(nn.Module):
-    def __init__(self, channels, kernel_size, dilation):
+    def __init__(self, channels, kernel_size, dilation, activation='prelu'):
         super().__init__()
         self.dilated_conv = wn(nn.Conv1d(
             channels, channels, kernel_size,
@@ -14,17 +14,26 @@ class ResidualLayer(nn.Module):
         ))
         self.conv_1x1 = wn(nn.Conv1d(channels, channels, 1))
         self.leaky_relu = nn.LeakyReLU(0.2)
+        self.prelu = nn.PReLU()
+        self.activation = activation
 
     def forward(self, x):
-        y = self.dilated_conv(self.leaky_relu(x))
-        y = self.conv_1x1(self.leaky_relu(y))
+        y = self.dilated_conv(self.activate(x))
+        y = self.conv_1x1(self.activate(y))
         return x + y
 
+    def activate(self, x):
+        if self.activation == 'leaky_relu':
+            return self.leaky_relu(x)
+        elif self.activation == 'prelu':
+            return self.prelu(x)
+        return x 
+
 class ResidualStack(nn.Module):
-    def __init__(self, channels, kernel_size, num_layers=3):
+    def __init__(self, channels, kernel_size, num_layers=3, activation='prelu'):
         super().__init__()
         self.layers = nn.ModuleList([
-            ResidualLayer(channels, kernel_size, dilation=3**i)
+            ResidualLayer(channels, kernel_size, dilation=3**i, activation=activation)
             for i in range(num_layers)
         ])
 
@@ -34,7 +43,7 @@ class ResidualStack(nn.Module):
         return x
 
 class DecoderTCNBlock(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size, dilation, activation=True, use_skip=True, use_wn=True, use_residual=True):
+    def __init__(self, in_channels, out_channels, kernel_size, dilation, activation='prelu', use_skip=True, use_wn=True, use_residual=True):
         super().__init__()
         if use_wn:
             self.conv = wn(torch.nn.ConvTranspose1d(
@@ -55,10 +64,11 @@ class DecoderTCNBlock(nn.Module):
         torch.nn.init.xavier_uniform_(self.conv.weight)
         torch.nn.init.zeros_(self.conv.bias)
 
-        self.residual_stack = ResidualStack(out_channels, kernel_size=3)
+        self.residual_stack = ResidualStack(out_channels, kernel_size=3, activation=activation)
 
-        if activation:
-            self.act = torch.nn.PReLU()
+        self.activation = activation
+        self.prelu = torch.nn.PReLU()
+        self.leaky_relu = torch.nn.LeakyReLU(0.2)
 
         if use_wn:
             self.gate = wn(torch.nn.Conv1d(out_channels + out_channels, out_channels, 1))
@@ -73,8 +83,10 @@ class DecoderTCNBlock(nn.Module):
 
     def forward(self, x, skip=None):
         x = self.conv(x)
-        if hasattr(self, "act"):
-            x = self.act(x)
+        if self.activation == 'leaky_relu':
+            x = self.leaky_relu(x)
+        elif self.activation == 'prelu':
+            x = self.prelu(x)
         
         if self.use_residual:
             x = self.residual_stack(x)
@@ -115,7 +127,7 @@ class NoiseGenerator(nn.Module):
         return noise.sum(dim=1, keepdim=True)
 
 class DecoderTCN(nn.Module):
-    def __init__(self, n_outputs=1, n_blocks=10, kernel_size=13, n_channels=64, dilation_growth=4, latent_dim=16, use_kl=False, use_skip=True, use_noise=True, noise_ratios=[4], noise_bands=4, use_wn=True, use_residual=True, dilate_conv=False, use_latent=False):    
+    def __init__(self, n_outputs=1, n_blocks=10, kernel_size=13, n_channels=64, dilation_growth=4, latent_dim=16, use_kl=False, use_skip=True, use_noise=True, noise_ratios=[4], noise_bands=4, use_wn=True, use_residual=True, dilate_conv=False, use_latent=False, activation='prelu'):    
         super().__init__()
         self.kernel_size = kernel_size
         self.n_channels = n_channels
@@ -168,9 +180,9 @@ class DecoderTCN(nn.Module):
             act = True
             dilation = dilation_growth ** (n_blocks - n)
             if (n+1) != n_blocks:
-                self.blocks.append(DecoderTCNBlock(in_ch, out_ch, kernel_size, dilation, activation=act, use_skip=use_skip, use_wn=use_wn, use_residual=use_residual))
+                self.blocks.append(DecoderTCNBlock(in_ch, out_ch, kernel_size, dilation, activation=activation, use_skip=use_skip, use_wn=use_wn, use_residual=use_residual))
             else: 
-                self.blocks.append(DecoderTCNBlock(in_ch, out_ch, kernel_size, dilation, activation=act, use_skip=False, use_wn=use_wn, use_residual=use_residual))
+                self.blocks.append(DecoderTCNBlock(in_ch, out_ch, kernel_size, dilation, activation=activation, use_skip=False, use_wn=use_wn, use_residual=use_residual))
             if (n+1) != n_blocks:
                 in_ch = out_ch # Update in_ch for the next block
 
