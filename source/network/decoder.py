@@ -214,5 +214,5 @@ class DecoderTCN(nn.Module):
             noise = self.noise_generator(x)
             x = x + noise
 
-        return torch.tanh(x)
+        return x
     
