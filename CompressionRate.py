@@ -54,28 +54,41 @@ def optimize_compression_rate(target_compression_rate, input_length, n_blocks, k
         best_diff = float('inf')
         best_rate = calculate_compression(n_blocks, kernel_size, dilation_growth, paddings, stride, n_bands)
 
-        for iteration in range(1000):  # Limit iterations to prevent infinite loops
-            improved = False
-            for i in range(n_blocks):
-                new_paddings = paddings.copy()
-                new_paddings[i] += 1
-                if min(new_paddings) < 0:
-                    continue
-
-                current_rate = calculate_compression(n_blocks, kernel_size, dilation_growth, new_paddings, stride, n_bands)
-                if current_rate == 0:  # Invalid configuration
-                    continue
-                diff = abs(current_rate - target_compression_rate)
-
-                if diff < best_diff:
-                    best_diff = diff
-                    best_rate = current_rate
-                    best_paddings = new_paddings.copy()
-                    improved = True
-
-            if not improved:
+        # Phase 1: Add padding to all layers until we exceed the target rate
+        while best_rate > target_compression_rate:
+            new_paddings = [p + 1 for p in paddings]
+            current_rate = calculate_compression(n_blocks, kernel_size, dilation_growth, new_paddings, stride, n_bands)
+            
+            if current_rate == 0:  # Invalid configuration
                 break
-            paddings = best_paddings.copy()
+            
+            best_rate = current_rate
+            best_paddings = new_paddings.copy()
+            paddings = new_paddings
+
+        # Phase 2: Fine-tune by adding padding to one layer at a time
+        if best_rate < target_compression_rate:
+            for iteration in range(1000):  # Limit iterations to prevent infinite loops
+                improved = False
+                for i in range(n_blocks):
+                    new_paddings = best_paddings.copy()
+                    new_paddings[i] -= 1
+                    
+                    current_rate = calculate_compression(n_blocks, kernel_size, dilation_growth, new_paddings, stride, n_bands)
+                    if current_rate == 0:  # Invalid configuration
+                        continue
+                    
+                    new_diff = abs(current_rate - target_compression_rate)
+                    
+                    if new_diff < best_diff:
+                        best_diff = new_diff
+                        best_rate = current_rate
+                        best_paddings = new_paddings.copy()
+                        improved = True
+                        break  # Stop after improving one layer
+                
+                if not improved:
+                    break  # Stop if no improvement was made in this iteration
 
         return best_paddings, best_rate
 
