@@ -62,6 +62,8 @@ stages:
     - train.use_wn
     - train.use_batch_norm
     - train.use_residual
+    - train.use_latent
+    - train.dilate_conv
     - metrics.loss_function
     - metrics.additional_mse
     - metrics.additional_spec

@@ -115,7 +115,7 @@ class NoiseGenerator(nn.Module):
         return noise.sum(dim=1, keepdim=True)
 
 class DecoderTCN(nn.Module):
-    def __init__(self, n_outputs=1, n_blocks=10, kernel_size=13, n_channels=64, dilation_growth=4, latent_dim=16, use_kl=False, use_skip=True, use_noise=True, noise_ratios=[4], noise_bands=4, use_wn=True, use_residual=True):    
+    def __init__(self, n_outputs=1, n_blocks=10, kernel_size=13, n_channels=64, dilation_growth=4, latent_dim=16, use_kl=False, use_skip=True, use_noise=True, noise_ratios=[4], noise_bands=4, use_wn=True, use_residual=True, dilate_conv=False, use_latent=False):    
         super().__init__()
         self.kernel_size = kernel_size
         self.n_channels = n_channels
@@ -124,11 +124,33 @@ class DecoderTCN(nn.Module):
         self.use_kl = use_kl
         self.use_skip = use_skip
         self.use_noise = use_noise
+        self.use_latent = use_latent
+        self.latent_dim = latent_dim
 
         # Add a convolutional layer to leave latent space
         initial_channels = n_channels * (2 ** (n_blocks - 1))
-        self.conv_decode = wn(torch.nn.Conv1d(latent_dim, initial_channels, 1))
-
+        self.initial_channels = initial_channels
+        if use_wn:
+            self.dense_expand = wn(torch.nn.Linear(latent_dim, initial_channels))
+        else:
+            self.dense_expand = wn(torch.nn.Linear(latent_dim, initial_channels))
+        if use_kl:
+            if use_wn:
+                self.conv_decode = wn(torch.nn.Conv1d(latent_dim, initial_channels, 1))
+            else:
+                self.conv_decode = torch.nn.Conv1d(latent_dim, initial_channels, 1)
+        else:
+            if use_wn:
+                if dilate_conv:
+                    self.conv_decode = wn(torch.nn.ConvTranspose1d(latent_dim, initial_channels, kernel_size, dilation=dilation_growth**n_blocks))
+                else:
+                    self.conv_decode = wn(torch.nn.ConvTranspose1d(latent_dim, initial_channels, kernel_size))
+            else:
+                if dilate_conv:
+                    self.conv_decode = torch.nn.ConvTranspose1d(latent_dim, initial_channels, kernel_size, dilation=dilation_growth**n_blocks)
+                else:
+                    self.conv_decode = torch.nn.ConvTranspose1d(latent_dim, initial_channels, kernel_size)
+            
         self.blocks = torch.nn.ModuleList()
 
         in_ch = n_channels * (2 ** (n_blocks - 1))
@@ -156,9 +178,15 @@ class DecoderTCN(nn.Module):
             self.noise_generator = NoiseGenerator(n_outputs, noise_bands=noise_bands)
 
     def forward(self, x, skips):
-        if self.use_kl:
-            print(x.shape)
+        if self.use_latent == 'conv' or self.use_kl:
             x = self.conv_decode(x)
+        elif self.use_latent == 'dense':
+            batch_size, latent_dim, time_steps = x.shape
+            x = x.transpose(1, 2).contiguous()  # [batch_size, time_steps, latent_dim]
+            x = x.view(-1, self.latent_dim)  # [batch_size * time_steps, latent_dim]
+            x = self.dense_expand(x)  # [batch_size * time_steps, n_channels]
+            x = x.view(batch_size, time_steps, self.initial_channels)  # [batch_size, time_steps, n_channels]
+            x = x.transpose(1, 2)  # [batch_size, n_channels, time_steps]
 
         for i, (block, skip) in enumerate(zip(self.blocks, skips)):
             x = block(x, skip)

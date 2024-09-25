@@ -37,7 +37,7 @@ class EncoderTCNBlock(torch.nn.Module):
     return x
 
 class EncoderTCN(torch.nn.Module):
-  def __init__(self, n_inputs=1, n_blocks=10, kernel_size=13, n_channels=64, dilation_growth=4, latent_dim=16, use_kl=False, use_wn=True, use_batch_norm=True):
+  def __init__(self, n_inputs=1, n_blocks=10, kernel_size=13, n_channels=64, dilation_growth=4, latent_dim=16, use_kl=False, use_wn=True, use_batch_norm=True, dilate_conv=False, use_latent=False):
     super().__init__()
     self.kernel_size = kernel_size
     self.n_channels = n_channels
@@ -45,6 +45,7 @@ class EncoderTCN(torch.nn.Module):
     self.n_blocks = n_blocks
     self.use_kl = use_kl
     self.latent_dim = latent_dim
+    self.use_latent = use_latent
 
     self.blocks = torch.nn.ModuleList()
     print(f"Building EncoderTCN with {n_blocks} blocks")
@@ -62,13 +63,22 @@ class EncoderTCN(torch.nn.Module):
         print(f"Appended block {n} with in_ch={in_ch}, kernel_size={kernel_size}, out_ch={out_ch}, dilation={dilation}.")
         in_ch = out_ch  # Update in_ch for the next block
 
-    # Use 1D convolutions to compute mean and log-variance
     if use_wn:
       self.conv_mu = wn(torch.nn.Conv1d(in_ch, latent_dim, 1))
       self.conv_logvar = wn(torch.nn.Conv1d(in_ch, latent_dim, 1))
+      self.dense_latent = wn(torch.nn.Linear(in_ch, latent_dim))
+      if dilate_conv:
+        self.conv_latent = wn(torch.nn.Conv1d(in_ch, latent_dim, kernel_size, dilation=dilation))
+      else:
+        self.conv_latent = wn(torch.nn.Conv1d(in_ch, latent_dim, kernel_size))
     else:
       self.conv_mu = torch.nn.Conv1d(in_ch, latent_dim, 1)
       self.conv_logvar = torch.nn.Conv1d(in_ch, latent_dim, 1)
+      self.dense_latent = torch.nn.Linear(in_ch, latent_dim)
+      if dilate_conv:
+        self.conv_latent = torch.nn.Conv1d(in_ch, latent_dim, kernel_size, dilation=dilation)    
+      else:
+        self.conv_latent = torch.nn.Conv1d(in_ch, latent_dim, kernel_size)
 
   def forward(self, x):
     encoder_outputs = [x]  # Include input as first element
@@ -81,7 +91,21 @@ class EncoderTCN(torch.nn.Module):
         mu = torch.tanh(self.conv_mu(x))
         logvar = torch.nn.functional.softplus(self.conv_logvar(x))
         return mu, logvar, encoder_outputs
-    return encoder_outputs
+    else:
+        if self.use_latent == 'conv':
+            latent = self.conv_latent(x)
+            encoder_outputs[-1] = latent 
+        elif self.use_latent == 'dense':   
+            batch_size, channels, time_steps = x.shape
+            print(x.shape)
+            x = x.transpose(1, 2).contiguous()  # [batch_size, time_steps, channels]
+            x = x.view(-1, channels)  # [batch_size * time_steps, channels]
+            latent = self.dense_latent(x)  # [batch_size * time_steps, latent_dim]
+            latent = latent.view(batch_size, time_steps, self.latent_dim)  # [batch_size, time_steps, latent_dim]
+            latent = latent.transpose(1, 2)  # [batch_size, latent_dim, time_steps]
+            encoder_outputs[-1] = latent
+            print(f"Latent shape: {latent.shape}")
+        return encoder_outputs
 
   def reparameterize(self, mu, logvar):
       """Reparameterization trick to sample from N(mu, var) from N(0,1)."""
