@@ -3,6 +3,7 @@
 [cache]
     shared = group
     type = symlink
+    dir = /scratch/chsc/neural-reverb-emulation/.dvc/cache
 ['remote "marckh"']
     url = ssh://chef@marckh.ak.tu-berlin.de:/home/chef/Data/neural-reverb-emulation
     timeout = 600
