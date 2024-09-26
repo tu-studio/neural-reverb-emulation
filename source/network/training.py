@@ -204,9 +204,7 @@ def train(encoder, decoder, discriminator, train_loader, val_loader, criterion, 
                     output_decomposed = encoder(dry_audio_decomposed)
                     wet_audio_decomposed = wet_audio_decomposed[..., rf-1:]
 
-                print(output_decomposed.shape)
                 loss = criterion(output_decomposed, wet_audio_decomposed)
-                print(loss)
 
                 if n_bands > 1:
                     dry = pqmf.inverse(dry_audio_decomposed)

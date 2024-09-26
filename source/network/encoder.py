@@ -100,14 +100,12 @@ class EncoderTCN(torch.nn.Module):
             encoder_outputs[-1] = latent 
         elif self.use_latent == 'dense':   
             batch_size, channels, time_steps = x.shape
-            print(x.shape)
             x = x.transpose(1, 2).contiguous()  # [batch_size, time_steps, channels]
             x = x.view(-1, channels)  # [batch_size * time_steps, channels]
             latent = self.dense_latent(x)  # [batch_size * time_steps, latent_dim]
             latent = latent.view(batch_size, time_steps, self.latent_dim)  # [batch_size, time_steps, latent_dim]
             latent = latent.transpose(1, 2)  # [batch_size, latent_dim, time_steps]
             encoder_outputs[-1] = latent
-            print(f"Latent shape: {latent.shape}")
         return encoder_outputs
 
   def reparameterize(self, mu, logvar):
