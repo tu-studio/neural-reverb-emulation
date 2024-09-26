@@ -12,7 +12,7 @@ def optimize_compression_rate(target_compression_rate, input_length, n_blocks, k
         
         for i in range(n_blocks):
             dilation = dilation_growth ** (i + 1)
-            padding = paddings[i] if i < len(paddings) else 0
+            padding = stride//2 + paddings[i] if i < len(paddings) else 0
             output_length = (output_length + 2 * padding - dilation * (kernel_size - 1) - 1) // stride + 1
             if output_length <= 0:
                 return 0  # Invalid configuration
