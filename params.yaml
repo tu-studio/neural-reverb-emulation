@@ -13,14 +13,14 @@ train:
   epochs: 7
   batch_size: 1
   kernel_size: 13
-  n_blocks: 4
+  n_blocks: 750
   dilation_growth: 10
   dilate_conv: true
   n_channels: 32
   lr: 0.0001
   use_kl: false
   use_skip: true
-  use_latent: 'conv' # Options: 'dense', 'conv', "None"
+  use_latent: 'None' # Options: 'dense', 'conv', "None"
   use_tcn: false
   use_pqmf: true
   use_adversarial: false

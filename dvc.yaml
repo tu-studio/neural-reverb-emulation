@@ -79,18 +79,18 @@ stages:
     - discriminator.stride
     - discriminator.padding
     - gan.loss_type
-    outs:
-    - model/checkpoints/
-  export:
-    cmd: python3 source/export.py
-    deps:
-    - source/export.py
-    - model/checkpoints/
-    params:
-    - general.input_size
-    - train.train_mode
-    outs:
-    - model/exports/
+  #   outs:
+  #   - model/checkpoints/
+  # export:
+  #   cmd: python3 source/export.py
+  #   deps:
+  #   - source/export.py
+  #   - model/checkpoints/
+  #   params:
+  #   - general.input_size
+  #   - train.train_mode
+  #   outs:
+  #   - model/exports/
   save_logs:
     cmd: python3 source/utils/logs.py
     outs:
