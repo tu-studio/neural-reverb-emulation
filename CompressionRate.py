@@ -20,7 +20,7 @@ def optimize_compression_rate(target_compression_rate, input_length, n_blocks, k
         # Final convolutional layer (conv_latent)
         final_dilation = dilation_growth ** n_blocks if dilate_conv else 1
         final_kernel_size = kernel_size
-        final_padding = 2
+        final_padding = 0
         final_stride = 1
         output_length = ((output_length + 2 * final_padding - final_dilation * (final_kernel_size - 1) - 1) // final_stride) + 1
 
