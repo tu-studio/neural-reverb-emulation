@@ -83,7 +83,7 @@ def submit_batch_job(n_bands, kernel_size, n_blocks, dilation_growth, latent_dim
                        f"-S train.activation={activation} "
                        f"-S train.use_latent={use_latent}")
     }
-    # subprocess.run(['/usr/bin/bash', '-c', 'sbatch slurm_job.sh'], env=env)
+    subprocess.run(['/usr/bin/bash', '-c', 'sbatch slurm_job.sh'], env=env)
     print(f"Submitted job: n_bands={n_bands}, n_blocks={n_blocks}, kernel_size={kernel_size}, dilation_growth={dilation_growth}, "
           f"latent_dim={latent_dim}, use_kl={use_kl}, use_adversarial={use_adversarial}, use_skips={use_skips}, use_noise={use_noise}, "
           f"use_residual={use_residual_stack}, use_wn={use_wn}, use_batch_norm={use_batch_norm}, "
