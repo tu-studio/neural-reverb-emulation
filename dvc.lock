@@ -10,8 +10,8 @@ stages:
       nfiles: 3
     - path: source/network/
       hash: md5
-      md5: 1da943356c7bfb87cf22dbb30177eddf.dir
-      size: 110650
+      md5: 57bce85cc994f171fda4892c9f99fef9.dir
+      size: 110558
       nfiles: 22
     - path: source/network/CombinedModels.py
       hash: md5
@@ -35,8 +35,8 @@ stages:
       size: 2156
     - path: source/network/ravepqmf.py
       hash: md5
-      md5: ff004d5afed02958b85ef7f204a0545f
-      size: 6965
+      md5: 6b1d8d0d4e150774d1d9ece29df3188a
+      size: 6938
     - path: source/network/tcn.py
       hash: md5
       md5: 19a996b567eeb956edf96080d4c8a085
