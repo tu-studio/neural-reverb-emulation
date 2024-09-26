@@ -10,8 +10,8 @@ stages:
       nfiles: 3
     - path: source/network/
       hash: md5
-      md5: 1da943356c7bfb87cf22dbb30177eddf.dir
-      size: 110650
+      md5: 7c37a72630a92b0e5b6b32fdaa709592.dir
+      size: 118659
       nfiles: 22
     - path: source/network/CombinedModels.py
       hash: md5
@@ -35,8 +35,8 @@ stages:
       size: 2156
     - path: source/network/ravepqmf.py
       hash: md5
-      md5: ff004d5afed02958b85ef7f204a0545f
-      size: 6965
+      md5: 6b1d8d0d4e150774d1d9ece29df3188a
+      size: 6938
     - path: source/network/tcn.py
       hash: md5
       md5: 19a996b567eeb956edf96080d4c8a085
@@ -51,8 +51,8 @@ stages:
       size: 15495
     - path: source/train.py
       hash: md5
-      md5: 556a7cf4fbcfb32761e73f0d40104a6e
-      size: 10467
+      md5: ba375ed60c3cf1417c425eb6c9c66a71
+      size: 10826
     params:
       params.yaml:
         discriminator.beta1: 0.5
@@ -72,8 +72,10 @@ stages:
         metrics.additional_spec: true
         metrics.additional_stft: true
         metrics.loss_function: combined
-        train.batch_size: 2
+        train.activation: prelu
+        train.batch_size: 1
         train.device_request: cuda
+        train.dilate_conv: true
         train.dilation_growth: 10
         train.epochs: 750
         train.input_file: data/processed/preprocessed_data.pt
@@ -89,9 +91,10 @@ stages:
         train.use_adversarial: false
         train.use_batch_norm: false
         train.use_kl: false
+        train.use_latent: dense
         train.use_noise: false
         train.use_pqmf: true
-        train.use_residual: false
+        train.use_residual: true
         train.use_skip: true
         train.use_tcn: false
         train.use_wn: false
