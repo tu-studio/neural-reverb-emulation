@@ -145,7 +145,7 @@ class DecoderTCN(nn.Module):
         if use_wn:
             self.dense_expand = wn(torch.nn.Linear(latent_dim, initial_channels))
         else:
-            self.dense_expand = wn(torch.nn.Linear(latent_dim, initial_channels))
+            self.dense_expand = torch.nn.Linear(latent_dim, initial_channels)
         if use_kl:
             if use_wn:
                 self.conv_decode = wn(torch.nn.Conv1d(latent_dim, initial_channels, 1))
