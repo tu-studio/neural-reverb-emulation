@@ -55,6 +55,7 @@ def main():
     use_latent = params["train"]["use_latent"]
     dilate_conv = params["train"]["dilate_conv"]
     activation = params["train"]["activation"]  
+    stride = params["train"]["stride"]
     additional_metrics = [ additional_spec ,additional_stft, additional_fft, additional_mse]
 
     final_size = calculate_final_input_size(input_size, n_bands, dilation_growth, n_blocks, kernel_size)
@@ -103,7 +104,8 @@ def main():
             use_batch_norm=use_batch_norm,
             use_latent=use_latent,
             dilate_conv=dilate_conv,
-            activation=activation)
+            activation=activation,
+            stride=stride)
         
         decoder = DecoderTCN(
             n_outputs=n_bands,
@@ -119,7 +121,8 @@ def main():
             use_residual=use_residual,
             dilate_conv=dilate_conv,
             use_latent=use_latent,
-            activation=activation)
+            activation=activation,
+            stride=stride)
         
         random_input = torch.randn(1, n_bands, int(2**math.ceil(math.log2(input_size))/n_bands))
         random_skips = []
@@ -250,7 +253,7 @@ def main():
               n_bands=n_bands, use_kl=use_kl, use_adversarial=use_adversarial, sample_rate=sample_rate, additional_metrics= additional_metrics, gan_loss = gan_loss)
         
         test(encoder, decoder, test_loader, criterion, writer, device, n_bands, use_kl, sample_rate)
-        
+
         # Save the models
         save_path = Path('models/checkpoints')
         save_path.mkdir(parents=True, exist_ok=True)

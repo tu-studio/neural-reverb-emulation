@@ -2,7 +2,7 @@ import torch
 import torch.nn.utils.weight_norm as wn
 
 class EncoderTCNBlock(torch.nn.Module):
-  def __init__(self, in_channels, out_channels, kernel_size, dilation, activation='prelu', use_wn=True, use_batch_norm=True):
+  def __init__(self, in_channels, out_channels, kernel_size, dilation, activation='prelu', use_wn=True, use_batch_norm=True, stride=1):
     super().__init__()
     if use_wn:
       self.conv = wn(torch.nn.Conv1d(
@@ -10,7 +10,8 @@ class EncoderTCNBlock(torch.nn.Module):
           out_channels, 
           kernel_size, 
           dilation=dilation, 
-          padding=0,
+          padding=stride // 2,
+          stride=stride,
           bias=True))
     else: 
       self.conv = torch.nn.Conv1d(
@@ -18,7 +19,8 @@ class EncoderTCNBlock(torch.nn.Module):
           out_channels, 
           kernel_size, 
           dilation=dilation, 
-          padding=0,
+          padding=stride // 2,
+          stride=stride,
           bias=True)
           
     self.bn = torch.nn.BatchNorm1d(out_channels)
@@ -40,7 +42,7 @@ class EncoderTCNBlock(torch.nn.Module):
     return x
 
 class EncoderTCN(torch.nn.Module):
-  def __init__(self, n_inputs=1, n_blocks=10, kernel_size=13, n_channels=64, dilation_growth=4, latent_dim=16, use_kl=False, use_wn=True, use_batch_norm=True, dilate_conv=False, use_latent=False, activation='prelu'):
+  def __init__(self, n_inputs=1, n_blocks=10, kernel_size=13, n_channels=64, dilation_growth=4, latent_dim=16, use_kl=False, use_wn=True, use_batch_norm=True, dilate_conv=False, use_latent=False, activation='prelu', stride=1):
     super().__init__()
     self.kernel_size = kernel_size
     self.n_channels = n_channels
@@ -62,7 +64,7 @@ class EncoderTCN(torch.nn.Module):
             act = True
         
         dilation = dilation_growth ** (n + 1)
-        self.blocks.append(EncoderTCNBlock(in_ch, out_ch, kernel_size, dilation, activation=activation, use_wn=use_wn, use_batch_norm=use_batch_norm))
+        self.blocks.append(EncoderTCNBlock(in_ch, out_ch, kernel_size, dilation, activation=activation, use_wn=use_wn, use_batch_norm=use_batch_norm, stride=stride))
         print(f"Appended block {n} with in_ch={in_ch}, kernel_size={kernel_size}, out_ch={out_ch}, dilation={dilation}.")
         in_ch = out_ch  # Update in_ch for the next block
 

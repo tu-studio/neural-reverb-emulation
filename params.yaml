@@ -17,6 +17,7 @@ train:
   dilation_growth: 10
   dilate_conv: true
   n_channels: 32
+  stride: 1
   lr: 0.0001
   use_kl: false
   use_skip: true
