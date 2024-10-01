@@ -255,7 +255,7 @@ def main():
         test(encoder, decoder, test_loader, criterion, writer, device, n_bands, use_kl, sample_rate)
 
         # Save the models
-        save_path = Path('models/checkpoints/encoder.pth')
+        save_path_enco = Path('models/checkpoints/encoder.pth')
         save_path_enco.mkdir(parents=True, exist_ok=True)
         save_path = Path('models/checkpoints/decoder.pth')
         save_path_deco.mkdir(parents=True, exist_ok=True)
