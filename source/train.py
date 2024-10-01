@@ -255,11 +255,13 @@ def main():
         test(encoder, decoder, test_loader, criterion, writer, device, n_bands, use_kl, sample_rate)
 
         # Save the models
-        save_path = Path('models/checkpoints')
-        save_path.mkdir(parents=True, exist_ok=True)
+        save_path = Path('models/checkpoints/encoder.pth')
+        save_path_enco.mkdir(parents=True, exist_ok=True)
+        save_path = Path('models/checkpoints/decoder.pth')
+        save_path_deco.mkdir(parents=True, exist_ok=True)
 
-        torch.save(encoder.state_dict(), save_path / 'encoder.pth')
-        torch.save(decoder.state_dict(), save_path / 'decoder.pth')
+        torch.save(encoder.state_dict(), save_path_enco)
+        torch.save(decoder.state_dict(), save_path_deco)
     else:
         train(model, None, train_loader, val_loader, criterion, optimizer, scheduler,
               tensorboard_writer=writer, num_epochs=n_epochs, device=device,
