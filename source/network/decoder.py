@@ -27,9 +27,9 @@ class ResidualStack(nn.Module):
         return x
 
 class DecoderTCNBlock(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size, dilation, activation='prelu', use_skip=True, use_wn=True, use_residual=True, stride=1):
+    def __init__(self, in_channels, out_channels, kernel_size, dilation, activation='prelu', use_skip=True, use_wn=True, use_residual=True, stride=1, padding=0):
         super().__init__()
-        conv = nn.ConvTranspose1d(in_channels, out_channels, kernel_size, dilation=dilation, padding=stride//2, stride=stride, bias=True, output_padding=stride//2)
+        conv = nn.ConvTranspose1d(in_channels, out_channels, kernel_size, dilation=dilation, padding=stride//2 + padding, stride=stride, bias=True, output_padding=stride//2)
         self.conv = wn(conv) if use_wn else conv
         nn.init.xavier_uniform_(self.conv.weight)
         nn.init.zeros_(self.conv.bias)
@@ -74,7 +74,7 @@ class NoiseGenerator(nn.Module):
         return noise.sum(dim=1, keepdim=True)
 
 class DecoderTCN(nn.Module):
-    def __init__(self, n_outputs=1, n_blocks=10, kernel_size=13, n_channels=64, dilation_growth=4, latent_dim=16, use_kl=False, use_skip=True, use_noise=True, noise_bands=4, use_wn=True, use_residual=True, dilate_conv=False, use_latent=False, activation='prelu', stride=1):    
+    def __init__(self, n_outputs=1, n_blocks=10, kernel_size=13, n_channels=64, dilation_growth=4, latent_dim=16, use_kl=False, use_skip=True, use_noise=True, noise_bands=4, use_wn=True, use_residual=True, dilate_conv=False, use_latent=False, activation='prelu', stride=1, padding=0):    
         super().__init__()
         self.use_kl = use_kl
         self.use_skip = use_skip
@@ -97,7 +97,7 @@ class DecoderTCN(nn.Module):
         for n in range(n_blocks):
             out_ch = n_outputs if n == n_blocks - 1 else in_ch // 2
             dilation = dilation_growth ** (n_blocks - n)
-            self.blocks.append(DecoderTCNBlock(in_ch, out_ch, kernel_size, dilation, activation=activation, use_skip=use_skip and n < n_blocks - 1, use_wn=use_wn, use_residual=use_residual, stride=stride))
+            self.blocks.append(DecoderTCNBlock(in_ch, out_ch, kernel_size, dilation, activation=activation, use_skip=use_skip and n < n_blocks - 1, use_wn=use_wn, use_residual=use_residual, stride=stride, padding=padding))
             in_ch = out_ch
 
         if use_noise:
@@ -108,7 +108,6 @@ class DecoderTCN(nn.Module):
             x = self.conv_decode(x)
         elif self.use_latent == 'dense':
             batch_size, latent_dim, time_steps = x.shape
-            # x = x.transpose(1, 2).contiguous().view(-1, self.latent_dim)
             x = self.dense_expand(x).view(batch_size, time_steps, self.initial_channels).transpose(1, 2)
 
         for i, (block, skip) in enumerate(zip(self.blocks, skips)):

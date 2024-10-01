@@ -1,112 +1,101 @@
 import math
+import itertools
 
-def optimize_receptive_field(target_receptive_field, input_length, n_blocks, kernel_size, dilation_growth, stride=2, dilate_conv=False, pqmf_kernel_size=8):
-    def calculate_receptive_field(n_blocks, kernel_size, dilation_growth, paddings, stride=2):
-        receptive_field = 1
-        for i in range(n_blocks):
-            dilation = dilation_growth ** i
-            receptive_field += (kernel_size - 1) * dilation * stride + paddings[i] * 2
+def calculate_receptive(n_blocks, kernel_size, dilation_growth, padding, input_length, stride=2, n_bands=2, dilate_conv=True):
+    output_length = input_length
+    if n_bands > 1:
+        padded_input_size = 2 ** math.ceil(math.log2(input_length))
+    else:
+        padded_input_size = input_length
 
-        # Final convolutional layer (conv_latent)
-        final_dilation = dilation_growth ** n_blocks if dilate_conv else 1
-        final_kernel_size = kernel_size
-        receptive_field += (final_kernel_size - 1) * final_dilation
+    output_length = padded_input_size // n_bands
+    
+    for i in range(n_blocks):
+        dilation = dilation_growth ** (i + 1)
+        output_length = (output_length + 2 * padding - dilation * (kernel_size - 1) - 1) // stride + 1
+        if output_length <= 0:
+            return 0  # Invalid configuration
 
-        # Account for PQMF
-        receptive_field *= pqmf_kernel_size
+    # Final convolutional layer (conv_latent)
+    final_dilation = dilation_growth ** n_blocks if dilate_conv else 1
+    final_kernel_size = kernel_size
+    final_padding = 0
+    final_stride = 1
+    output_length = ((output_length + 2 * final_padding - final_dilation * (final_kernel_size - 1) - 1) // final_stride) + 1
 
-        return receptive_field
+    if output_length <= 0:
+        return 0  # Invalid configuration
 
-    def find_optimal_parameters():
-        best_params = None
-        best_rf = 0
+    receptive_field = input_length - output_length
+    return receptive_field
+
+def grid_search_receptive_field(target_receptive_field, input_length, stride=2, tolerance=1):
+    best_config = None
+    best_difference = float('inf')
+
+    # Stage 1: Gross approach without padding
+    n_blocks_range = range(1, 6)
+    kernel_size_range = range(3, 20)
+    dilation_growth_range = range(1, 16)
+    n_bands_range = [2, 4, 8, 16]
+
+    print("Stage 1: Gross approach without padding")
+    for n_blocks, kernel_size, dilation_growth, n_bands in itertools.product(n_blocks_range, kernel_size_range, dilation_growth_range, n_bands_range):
+        receptive_field = calculate_receptive(n_blocks, kernel_size, dilation_growth, 0, input_length, stride, n_bands)
+        difference = abs(receptive_field - target_receptive_field)
         
-        for kernel_size_try in range(max(3, kernel_size - 5), kernel_size + 10, 2):
-            for n_blocks_try in range(max(1, n_blocks - 5), n_blocks + 5):
-                for dilation_growth_try in range(max(1, dilation_growth - 5), dilation_growth + 5):
-                    for stride_try in range(1, 3):
-                        rf = calculate_receptive_field(n_blocks_try, kernel_size_try, dilation_growth_try, [0] * n_blocks_try, stride_try)
-                        if abs(rf - target_receptive_field) <= abs(best_rf - target_receptive_field):
-                            best_rf = rf
-                            best_params = (n_blocks_try, kernel_size_try, dilation_growth_try, stride_try)
-                        
-                        if best_rf == target_receptive_field:
-                            return best_params, best_rf
+        if difference < best_difference:
+            best_difference = difference
+            best_config = {
+                'n_blocks': n_blocks,
+                'kernel_size': kernel_size,
+                'dilation_growth': dilation_growth,
+                'n_bands': n_bands,
+                'padding': 0,
+                'receptive_field': receptive_field
+            }
         
-        return best_params, best_rf
+        if difference <= tolerance:
+            return best_config
 
-    def fine_tune_with_padding(n_blocks, kernel_size, dilation_growth, stride):
-        best_paddings = [0] * n_blocks
-        best_rf = calculate_receptive_field(n_blocks, kernel_size, dilation_growth, best_paddings, stride)
-        
-        for _ in range(100):  # Limit iterations to avoid infinite loop
-            improved = False
-            for i in range(n_blocks):
-                for delta in [-1, 1]:
-                    new_paddings = best_paddings.copy()
-                    new_paddings[i] += delta
-                    if min(new_paddings) >= 0:  # Ensure non-negative padding
-                        new_rf = calculate_receptive_field(n_blocks, kernel_size, dilation_growth, new_paddings, stride)
-                        if abs(new_rf - target_receptive_field) < abs(best_rf - target_receptive_field):
-                            best_paddings = new_paddings
-                            best_rf = new_rf
-                            improved = True
+    # Stage 2: Fine-tuning with even padding
+    print("Stage 2: Fine-tuning with even padding")
+    if best_config:
+        padding_range = range(0, 1000)  # Adjust this range as needed
+        for padding in padding_range:
+            receptive_field = calculate_receptive(
+                best_config['n_blocks'],
+                best_config['kernel_size'],
+                best_config['dilation_growth'],
+                padding,
+                input_length,
+                stride,
+                best_config['n_bands']
+            )
+            difference = abs(receptive_field - target_receptive_field)
             
-            if not improved:
+            if difference < best_difference:
+                best_difference = difference
+                best_config['padding'] = padding
+                best_config['receptive_field'] = receptive_field
+            
+            if difference <= tolerance:
                 break
-        
-        return best_paddings, best_rf
 
-    print("\nStarting optimization...")
-    optimal_params, achieved_rf = find_optimal_parameters()
-    
-    if optimal_params is None:
-        print("Could not find valid parameters")
-        return None
-    
-    optimal_n_blocks, optimal_kernel_size, optimal_dilation_growth, optimal_stride = optimal_params
-    
-    print("\nFine-tuning with padding...")
-    optimal_paddings, fine_tuned_rf = fine_tune_with_padding(optimal_n_blocks, optimal_kernel_size, optimal_dilation_growth, optimal_stride)
-    
-    results = {
-        "n_blocks": optimal_n_blocks,
-        "kernel_size": optimal_kernel_size,
-        "dilation_growth": optimal_dilation_growth,
-        "stride": optimal_stride,
-        "paddings": optimal_paddings,
-        "achieved_rf": fine_tuned_rf
-    }
-    
-    print(f"Achieved receptive field after fine-tuning: {fine_tuned_rf}")
-
-    return results
+    return best_config
 
 # Example usage
-input_length = 508032
-n_blocks = 3
-kernel_size = 17
-dilation_growth = 15
-target_receptive_field = 2**16  # 65536
-pqmf_kernel_size = 8
+target_receptive_field = 2**17
+input_length = 2**19
+stride = 1
 
-print("Initial configuration:")
-print(f"input_length: {input_length}")
-print(f"n_blocks: {n_blocks}")
-print(f"kernel_size: {kernel_size}")
-print(f"dilation_growth: {dilation_growth}")
-print(f"target_receptive_field: {target_receptive_field}")
-print(f"pqmf_kernel_size: {pqmf_kernel_size}")
+result = grid_search_receptive_field(target_receptive_field, input_length, stride)
 
-results = optimize_receptive_field(target_receptive_field, input_length, n_blocks, kernel_size, dilation_growth, pqmf_kernel_size=pqmf_kernel_size)
-
-if results:
-    print("\nFinal Results:")
-    print(f"Optimal n_blocks: {results['n_blocks']}")
-    print(f"Optimal kernel_size: {results['kernel_size']}")
-    print(f"Optimal dilation_growth: {results['dilation_growth']}")
-    print(f"Optimal stride: {results['stride']}")
-    print(f"Optimal paddings: {results['paddings']}")
-    print(f"Achieved receptive field: {results['achieved_rf']}")
-
-print(f"\nTarget receptive field: {target_receptive_field}")
+print(f"\nBest configuration found:")
+print(f"n_blocks: {result['n_blocks']}")
+print(f"kernel_size: {result['kernel_size']}")
+print(f"dilation_growth: {result['dilation_growth']}")
+print(f"n_bands: {result['n_bands']}")
+print(f"padding: {result['padding']}")
+print(f"Achieved receptive field: {result['receptive_field']}")
+print(f"Difference from target: {abs(result['receptive_field'] - target_receptive_field)}")

@@ -56,6 +56,7 @@ def main():
     dilate_conv = params["train"]["dilate_conv"]
     activation = params["train"]["activation"]  
     stride = params["train"]["stride"]
+    padding = params["train"]["padding"]
     additional_metrics = [ additional_spec ,additional_stft, additional_fft, additional_mse]
 
     final_size = calculate_final_input_size(input_size, n_bands, dilation_growth, n_blocks, kernel_size)
@@ -105,7 +106,8 @@ def main():
             use_latent=use_latent,
             dilate_conv=dilate_conv,
             activation=activation,
-            stride=stride)
+            stride=stride,
+            padding=padding)
         
         decoder = DecoderTCN(
             n_outputs=n_bands,
@@ -122,7 +124,8 @@ def main():
             dilate_conv=dilate_conv,
             use_latent=use_latent,
             activation=activation,
-            stride=stride)
+            stride=stride,
+            padding=padding)
         
         random_input = torch.randn(1, n_bands, int(2**math.ceil(math.log2(input_size))/n_bands))
         random_skips = []

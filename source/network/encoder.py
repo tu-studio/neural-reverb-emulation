@@ -2,14 +2,14 @@ import torch
 import torch.nn.utils.weight_norm as wn
 
 class EncoderTCNBlock(torch.nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size, dilation, activation='prelu', use_wn=True, use_batch_norm=True, stride=1):
+    def __init__(self, in_channels, out_channels, kernel_size, dilation, activation='prelu', use_wn=True, use_batch_norm=True, stride=1, padding=0):
         super().__init__()
         conv = torch.nn.Conv1d(
             in_channels, 
             out_channels, 
             kernel_size, 
             dilation=dilation, 
-            padding=stride // 2,
+            padding=stride // 2 + padding,
             stride=stride,
             bias=True
         )
@@ -25,7 +25,7 @@ class EncoderTCNBlock(torch.nn.Module):
         return self.activation(x)
 
 class EncoderTCN(torch.nn.Module):
-    def __init__(self, n_inputs=1, n_blocks=10, kernel_size=13, n_channels=64, dilation_growth=4, latent_dim=16, use_kl=False, use_wn=True, use_batch_norm=True, dilate_conv=False, use_latent=False, activation='prelu', stride=1):
+    def __init__(self, n_inputs=1, n_blocks=10, kernel_size=13, n_channels=64, dilation_growth=4, latent_dim=16, use_kl=False, use_wn=True, use_batch_norm=True, dilate_conv=False, use_latent=False, activation='prelu', stride=1, padding=0):
         super().__init__()
         self.use_kl = use_kl
         self.latent_dim = latent_dim
@@ -36,7 +36,7 @@ class EncoderTCN(torch.nn.Module):
         for n in range(n_blocks):
             out_ch = n_channels if n == 0 else in_ch * 2
             dilation = dilation_growth ** (n + 1)
-            self.blocks.append(EncoderTCNBlock(in_ch, out_ch, kernel_size, dilation, activation, use_wn, use_batch_norm, stride))
+            self.blocks.append(EncoderTCNBlock(in_ch, out_ch, kernel_size, dilation, activation, use_wn, use_batch_norm, stride, padding))
             in_ch = out_ch
 
         if use_kl:

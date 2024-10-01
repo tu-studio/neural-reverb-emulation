@@ -52,7 +52,7 @@ def test(encoder, decoder, test_loader, criterion, tensorboard_writer, device='c
                     mu, logvar, encoder_outputs = encoder(dry_audio_decomposed)
                     z = encoder.reparameterize(mu, logvar)
                     kl_div = (-0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())) / mu.shape[-1]
-                    train_epoch_kl_div += kl_div
+                    test_kl_div += kl_div
                 else:
                     encoder_outputs = encoder(dry_audio_decomposed)
                     z = encoder_outputs.pop()
