@@ -257,7 +257,7 @@ def main():
         # Save the models
         save_path_enco = Path('models/checkpoints/encoder.pth')
         save_path_enco.mkdir(parents=True, exist_ok=True)
-        save_path = Path('models/checkpoints/decoder.pth')
+        save_path_deco = Path('models/checkpoints/decoder.pth')
         save_path_deco.mkdir(parents=True, exist_ok=True)
 
         torch.save(encoder.state_dict(), save_path_enco)
