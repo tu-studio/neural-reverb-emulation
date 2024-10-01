@@ -108,7 +108,7 @@ class DecoderTCN(nn.Module):
             x = self.conv_decode(x)
         elif self.use_latent == 'dense':
             batch_size, latent_dim, time_steps = x.shape
-            x = x.transpose(1, 2).contiguous().view(-1, self.latent_dim)
+            # x = x.transpose(1, 2).contiguous().view(-1, self.latent_dim)
             x = self.dense_expand(x).view(batch_size, time_steps, self.initial_channels).transpose(1, 2)
 
         for i, (block, skip) in enumerate(zip(self.blocks, skips)):

@@ -64,7 +64,7 @@ class EncoderTCN(torch.nn.Module):
         elif self.use_latent == 'dense':
             batch_size, channels, time_steps = x.shape
             x = x.transpose(1, 2).contiguous().view(-1, channels)
-            latent = self.dense_latent(x).view(batch_size, time_steps, self.latent_dim).transpose(1, 2)
+            latent = self.dense_latent(x)
             encoder_outputs[-1] = latent
         return encoder_outputs
 
