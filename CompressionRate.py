@@ -26,7 +26,7 @@ def calculate_receptive(n_blocks, kernel_size, dilation_growth, padding, input_l
     if output_length <= 0:
         return 0  # Invalid configuration
 
-    receptive_field = input_length - output_length
+    receptive_field = padded_input_size - output_length
     return receptive_field
 
 def grid_search_receptive_field(target_receptive_field, input_length, stride=2, tolerance=1):
