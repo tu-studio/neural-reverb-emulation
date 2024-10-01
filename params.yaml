@@ -8,9 +8,9 @@ train:
   scheduler_rate: 0.1
   device_request: cuda
   n_inputs: 1
-  n_bands: 16
+  n_bands: 8
   latent_dim: 64
-  epochs: 1
+  epochs: 750
   batch_size: 1
   kernel_size: 6
   n_blocks: 3
@@ -21,7 +21,7 @@ train:
   lr: 0.0001
   use_kl: false
   use_skip: true
-  use_latent: 'None' # Options: 'dense', 'conv', "None"
+  use_latent: 'conv' # Options: 'dense', 'conv', "None"
   use_tcn: false
   use_pqmf: true
   use_adversarial: false
