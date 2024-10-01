@@ -15,6 +15,34 @@ from utils import logs, config
 from pathlib import Path
 import math
 
+def calculate_receptive(n_blocks, kernel_size, dilation_growth, padding, input_length, stride=2, n_bands=2, dilate_conv=True):
+    output_length = input_length
+    if n_bands > 1:
+        padded_input_size = 2 ** math.ceil(math.log2(input_length))
+    else:
+        padded_input_size = input_length
+
+    output_length = padded_input_size // n_bands
+    
+    for i in range(n_blocks):
+        dilation = dilation_growth ** (i + 1)
+        output_length = (output_length + 2 * padding - dilation * (kernel_size - 1) - 1) // stride + 1
+        if output_length <= 0:
+            return 0  # Invalid configuration
+
+    # Final convolutional layer (conv_latent)
+    final_dilation = dilation_growth ** n_blocks if dilate_conv else 1
+    final_kernel_size = kernel_size
+    final_padding = 0
+    final_stride = 1
+    output_length = ((output_length + 2 * final_padding - final_dilation * (final_kernel_size - 1) - 1) // final_stride) + 1
+
+    if output_length <= 0:
+        return 0  # Invalid configuration
+
+    receptive_field = padded_input_size - output_length
+    return receptive_field
+
 def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
@@ -62,10 +90,25 @@ def main():
     final_size = calculate_final_input_size(input_size, n_bands, dilation_growth, n_blocks, kernel_size)
     print("final size = ", final_size)
 
+    # Calculate the receptive field
+    receptive_field = calculate_receptive(
+        n_blocks=n_blocks,
+        kernel_size=kernel_size,
+        dilation_growth=dilation_growth,
+        padding=padding,
+        input_length=input_size,
+        stride=stride,
+        n_bands=n_bands,
+        dilate_conv=dilate_conv
+    )
+
+
     # Create a SummaryWriter object to write the tensorboard logs
     tensorboard_path = logs.return_tensorboard_path()
     metrics = {'Loss/ training loss': None, 'Test Loss/Overall': None}
     writer = logs.CustomSummaryWriter(log_dir=tensorboard_path, params=params, metrics=metrics)
+
+    writer.add_scalar("Model/Receptive_Field", receptive_field, 0)
 
     # Set a random seed for reproducibility across all devices. Add more devices if needed
     config.set_random_seeds(random_seed)
