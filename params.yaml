@@ -8,7 +8,7 @@ train:
   scheduler_rate: 0.1
   device_request: cuda
   n_inputs: 1
-  n_bands: 8
+  n_bands: 16
   latent_dim: 64
   epochs: 750
   batch_size: 1
