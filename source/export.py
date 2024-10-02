@@ -94,7 +94,7 @@ def main():
         example = torch.rand(1, n_inputs, input_size)
 
     # Export the model
-    output_file_path = Path('models/exports/model.onnx')
+    output_file_path = Path('model/exports/model.onnx')
     output_file_path.parent.mkdir(parents=True, exist_ok=True)
     
     torch.onnx.export(model, example, output_file_path, export_params=True, opset_version=17, do_constant_folding=True,
