@@ -9,7 +9,7 @@ class EncoderTCNBlock(torch.nn.Module):
             out_channels, 
             kernel_size, 
             dilation=dilation, 
-            padding=stride // 2 + padding,
+            padding=stride // 2 +padding,
             stride=stride,
             bias=True
         )

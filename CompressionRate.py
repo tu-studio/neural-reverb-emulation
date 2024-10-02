@@ -26,6 +26,8 @@ def calculate_receptive(n_blocks, kernel_size, dilation_growth, padding, input_l
     if output_length <= 0:
         return 0  # Invalid configuration
 
+
+    
     receptive_field = padded_input_size - output_length
     return receptive_field
 
@@ -37,14 +39,16 @@ def grid_search_receptive_field(target_receptive_field, input_length, stride=2, 
     n_blocks_range = range(1, 6)
     kernel_size_range = range(3, 20)
     dilation_growth_range = range(1, 16)
-    n_bands_range = [2, 4, 8, 16]
+    n_bands_range = [1,2, 4, 8, 16]
 
     print("Stage 1: Gross approach without padding")
     for n_blocks, kernel_size, dilation_growth, n_bands in itertools.product(n_blocks_range, kernel_size_range, dilation_growth_range, n_bands_range):
         receptive_field = calculate_receptive(n_blocks, kernel_size, dilation_growth, 0, input_length, stride, n_bands)
         difference = abs(receptive_field - target_receptive_field)
+
+        print(difference, receptive_field, n_blocks, kernel_size, dilation_growth, n_bands)
         
-        if difference < best_difference:
+        if receptive_field >0 and difference < best_difference:
             best_difference = difference
             best_config = {
                 'n_blocks': n_blocks,
