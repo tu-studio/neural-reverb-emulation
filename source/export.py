@@ -5,6 +5,7 @@ from network.encoder import EncoderTCN
 from network.decoder import DecoderTCN
 from network.tcn import TCN
 from network.CombinedModels import CombinedEncoderDecoder
+import math
 
 def main():
     # Load the hyperparameters from the params yaml file into a Dictionary
@@ -67,8 +68,8 @@ def main():
         model = CombinedEncoderDecoder(encoder, decoder)
 
         # Load the model state
-        encoder_path = Path('models/checkpoints/encoder.pth')
-        decoder_path = Path('models/checkpoints/decoder.pth')
+        encoder_path = Path('model/checkpoints/encoder.pth')
+        decoder_path = Path('model/checkpoints/decoder.pth')
         encoder.load_state_dict(torch.load(encoder_path, map_location=torch.device('cpu')))
         decoder.load_state_dict(torch.load(decoder_path, map_location=torch.device('cpu')))
 
@@ -86,7 +87,7 @@ def main():
         )
 
         # Load the model state
-        model_path = Path('models/checkpoints/tcn_model.pth')
+        model_path = Path('model/checkpoints/tcn_model.pth')
         model.load_state_dict(torch.load(model_path, map_location=torch.device('cpu')))
 
         # Prepare example input

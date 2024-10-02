@@ -14,6 +14,7 @@ from network.latent import calculate_final_input_size
 from utils import logs, config
 from pathlib import Path
 import math
+import os
 
 def calculate_receptive(n_blocks, kernel_size, dilation_growth, padding, input_length, stride=2, n_bands=2, dilate_conv=True):
     output_length = input_length
@@ -301,13 +302,33 @@ def main():
         test(encoder, decoder, test_loader, criterion, writer, device, n_bands, use_kl, sample_rate)
 
         # Save the models
-        save_path_enco = Path('models/checkpoints/encoder.pth')
-        save_path_enco.mkdir(parents=True, exist_ok=True)
-        save_path_deco = Path('models/checkpoints/decoder.pth')
-        save_path_deco.mkdir(parents=True, exist_ok=True)
+        save_dir = Path('model/checkpoints')
+        save_path_enco = save_dir / 'encoder.pth'
+        save_path_deco = save_dir / 'decoder.pth'
 
-        torch.save(encoder.state_dict(), save_path_enco)
-        torch.save(decoder.state_dict(), save_path_deco)
+        print(f"Current working directory: {os.getcwd()}")
+        print(f"Attempting to create directory: {save_dir}")
+        
+        try:
+            save_dir.mkdir(parents=True, exist_ok=True)
+            print(f"Directory created/exists: {save_dir}")
+        except Exception as e:
+            print(f"Error creating directory: {e}")
+
+        print(f"Attempting to save encoder to: {save_path_enco}")
+        try:
+            torch.save(encoder.state_dict(), save_path_enco)
+            print(f"Encoder saved successfully")
+        except Exception as e:
+            print(f"Error saving encoder: {e}")
+
+        print(f"Attempting to save decoder to: {save_path_deco}")
+        try:
+            torch.save(decoder.state_dict(), save_path_deco)
+            print(f"Decoder saved successfully")
+        except Exception as e:
+            print(f"Error saving decoder: {e}")
+
     else:
         train(model, None, train_loader, val_loader, criterion, optimizer, scheduler,
               tensorboard_writer=writer, num_epochs=n_epochs, device=device,
@@ -316,7 +337,7 @@ def main():
         test(model, None, test_loader, criterion, writer, device, n_bands, False, sample_rate)
         
         # Save the model
-        save_path = Path('models/checkpoints')
+        save_path = Path('model/checkpoints')
         save_path.mkdir(parents=True, exist_ok=True)
 
         torch.save(model.state_dict(), save_path / 'tcn_model.pth')
