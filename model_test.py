@@ -1,83 +1,140 @@
 import torch
 import librosa
 import soundfile as sf
-import onnxruntime
 import numpy as np
 import matplotlib.pyplot as plt
 from pathlib import Path
+from source.network.encoder import EncoderTCN
+from source.network.decoder import DecoderTCN
+from source.network.CombinedModels import CombinedEncoderDecoder
+from source.utils import config
 
-# Load the ONNX model
-model_path = Path('model/exports/model.onnx')
-ort_session = onnxruntime.InferenceSession(str(model_path))
+# Load the parameters
+params = config.Params('params.yaml')
 
-# Get model input name and shape
-input_name = ort_session.get_inputs()[0].name
-input_shape = ort_session.get_inputs()[0].shape
-print(f"Model input name: {input_name}")
-print(f"Model input shape: {input_shape}")
+# Load model parameters
+n_bands = params["train"]["n_bands"]
+latent_dim = params["train"]["latent_dim"]
+kernel_size = params["train"]["kernel_size"]
+n_blocks = params["train"]["n_blocks"]
+dilation_growth = params["train"]["dilation_growth"]
+n_channels = params["train"]["n_channels"]
+use_kl = params["train"]["use_kl"]
+use_skip = params["train"]["use_skip"]
+use_noise = params["train"]["use_noise"]
+use_wn = params["train"]["use_wn"]
+use_batch_norm = params["train"]["use_batch_norm"]
+use_residual = params["train"]["use_residual"]
+use_latent = params["train"]["use_latent"]
+dilate_conv = params["train"]["dilate_conv"]
+activation = params["train"]["activation"]
+stride = params["train"]["stride"]
+padding = params["train"]["padding"]
 
-def load_audio(file_path, target_length=None):
-    waveform, sample_rate = librosa.load(file_path, sr=None, mono=True)
+# Initialize encoder and decoder
+encoder = EncoderTCN(
+    n_inputs=n_bands,
+    kernel_size=kernel_size, 
+    n_blocks=n_blocks, 
+    dilation_growth=dilation_growth, 
+    n_channels=n_channels,
+    latent_dim=latent_dim,
+    use_kl=use_kl,
+    use_wn=use_wn,
+    use_batch_norm=use_batch_norm,
+    use_latent=use_latent,
+    dilate_conv=dilate_conv,
+    activation=activation,
+    stride=stride,
+    padding=padding
+)
+
+decoder = DecoderTCN(
+    n_outputs=n_bands,
+    kernel_size=kernel_size,
+    n_blocks=n_blocks, 
+    dilation_growth=dilation_growth, 
+    n_channels=n_channels,
+    latent_dim=latent_dim,
+    use_kl=use_kl,
+    use_skip=use_skip,
+    use_noise=use_noise,
+    use_wn=use_wn,
+    use_residual=use_residual,
+    dilate_conv=dilate_conv,
+    use_latent=use_latent,
+    activation=activation,
+    stride=stride,
+    padding=padding
+)
+
+# Load the model state
+encoder_path = Path('model/checkpoints/encoder.pth')
+decoder_path = Path('model/checkpoints/decoder.pth')
+encoder.load_state_dict(torch.load(encoder_path, map_location=torch.device('cpu')))
+decoder.load_state_dict(torch.load(decoder_path, map_location=torch.device('cpu')))
+
+# Combine encoder and decoder
+model = CombinedEncoderDecoder(encoder, decoder)
+model.eval()  # Set the model to evaluation mode
+
+def normalize_audio(audio):
+    max_val = np.max(np.abs(audio))
+    if max_val > 1.0:
+        return audio / max_val
+    return audio
+
+def process_audio(file_path, model):
+    # Load audio file
+    audio, sample_rate = librosa.load(file_path, sr=None, mono=True)
+
+    # Normalize audio
+    audio = normalize_audio(audio)
+
+    # Prepare input for the model
+    input_audio = torch.from_numpy(audio).float().unsqueeze(0).unsqueeze(0)  # Add batch and channel dimensions
     
-    # Adjust length if needed
-    if target_length is not None:
-        if len(waveform) < target_length:
-            waveform = librosa.util.fix_length(waveform, target_length)
+    # Process audio through the model
+    with torch.no_grad():
+        if use_kl:
+            mu, logvar, encoder_outputs = encoder(input_audio)
+            z = encoder.reparameterize(mu, logvar)
         else:
-            waveform = waveform[:target_length]
-    
-    return waveform, sample_rate
+            encoder_outputs = encoder(input_audio)
+            z = encoder_outputs.pop()
+        encoder_outputs = encoder_outputs[::-1]
+        output_audio = decoder(z, encoder_outputs)
 
-def process_audio(waveform, ort_session, input_name):
-    # Prepare input (ensure it's 3D for ONNX input: [batch, channel, time])
-    model_input = waveform[np.newaxis, np.newaxis, :]
-    
-    # Run inference
-    ort_inputs = {input_name: model_input.astype(np.float32)}
-    ort_outputs = ort_session.run(None, ort_inputs)
-    
-    # Convert output back to 1D numpy array
-    processed_audio = ort_outputs[0].squeeze()
-    
-    return processed_audio
+    return audio, output_audio.numpy().squeeze(), sample_rate
 
-def plot_waveforms(original, processed):
+def plot_waveforms(dry, reconstructed, sample_rate):
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8))
     
-    ax1.plot(original)
-    ax1.set_title('Original Waveform')
-    ax1.set_ylim([-1, 1])
-    
-    ax2.plot(processed)
-    ax2.set_title('Processed Waveform')
-    ax2.set_ylim([-1, 1])
-    
+    time = np.arange(len(dry)) / sample_rate
+    ax1.plot(time, dry)
+    ax1.set_title('Dry Audio')
+    ax1.set_xlabel('Time (s)')
+    ax1.set_ylabel('Amplitude')
+
+    ax2.plot(time[:len(reconstructed)], reconstructed)
+    ax2.set_title('Reconstructed Audio')
+    ax2.set_xlabel('Time (s)')
+    ax2.set_ylabel('Amplitude')
+
     plt.tight_layout()
     plt.show()
 
-def save_audio(waveform, sample_rate, file_path):
-    sf.write(file_path, waveform, sample_rate)
-    print(f"Saved processed audio to {file_path}")
-
 def main():
-    # Load your audio file
-    audio_path = 'hypno project- save 3.wav'  # Replace with your audio file path
-    waveform, sample_rate = load_audio(audio_path)
-
-    print(f"Loaded audio shape: {waveform.shape}, Sample rate: {sample_rate}")
-    
-    # Process audio with the model
-    processed_waveform = process_audio(waveform, ort_session, input_name)
-    print(f"Processed audio shape: {processed_waveform.shape}")
+    # Process an audio file
+    input_file = 'mixkit-creature-sad-crying-465.wav'  # Replace with your input file path
+    dry_audio, reconstructed_audio, sample_rate = process_audio(input_file, model)
 
     # Plot waveforms
-    plot_waveforms(waveform, processed_waveform)
+    plot_waveforms(dry_audio, reconstructed_audio, sample_rate)
 
-    # Save the processed audio
-    output_path = 'processed_audio.wav'  # Replace with your desired output path
-    save_audio(processed_waveform, sample_rate, output_path)
-
-    print("Audio processing complete. Check the output file and the generated plot.")
+    # Save the reconstructed audio
+    output_file = 'output_audio.wav'  # Replace with your desired output file path
+    sf.write(output_file, reconstructed_audio, sample_rate)
 
 if __name__ == "__main__":
     main()
