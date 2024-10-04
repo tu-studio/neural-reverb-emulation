@@ -10,9 +10,9 @@ stages:
       nfiles: 3
     - path: source/network/
       hash: md5
-      md5: ab0f9766dd712a37dc46a8e204f32bfa.dir
-      size: 46755
-      nfiles: 11
+      md5: a42c3231d8a32c797ee2e59c9d40efb6.dir
+      size: 110066
+      nfiles: 22
     - path: source/network/CombinedModels.py
       hash: md5
       md5: cde5906e62ae430a961d3bb52fe3095c
@@ -27,8 +27,8 @@ stages:
       size: 1285
     - path: source/network/latent.py
       hash: md5
-      md5: c5da925c66b5dd09774bf4c521203281
-      size: 695
+      md5: 1c87c142135b5b79751ad0134b8ed6f4
+      size: 829
     - path: source/network/metrics.py
       hash: md5
       md5: cdc7bfca0316cf52d2f32898e9186c07
@@ -51,8 +51,8 @@ stages:
       size: 15418
     - path: source/train.py
       hash: md5
-      md5: a9051efc0d6be376535a1089160539f5
-      size: 12613
+      md5: f23d17f13611a733a807eaafbefcd4b1
+      size: 13288
     params:
       params.yaml:
         discriminator.beta1: 0.5
@@ -76,18 +76,18 @@ stages:
         train.batch_size: 1
         train.device_request: cuda
         train.dilate_conv: true
-        train.dilation_growth: 15
-        train.epochs: 750
+        train.dilation_growth: 1
+        train.epochs: 1
         train.input_file: data/processed/preprocessed_data.pt
-        train.kernel_size: 6
+        train.kernel_size: 1
         train.latent_dim: 64
         train.lr: 0.0001
-        train.n_bands: 8
-        train.n_blocks: 3
+        train.n_bands: 1
+        train.n_blocks: 1
         train.n_channels: 32
         train.n_inputs: 1
         train.name: model
-        train.padding: 0
+        train.padding: 71
         train.scheduler_rate: 0.1
         train.stride: 1
         train.use_adversarial: false
@@ -103,40 +103,40 @@ stages:
     outs:
     - path: model/checkpoints/
       hash: md5
-      md5: d751713988987e9331980363e24189ce.dir
-      size: 0
-      nfiles: 0
+      md5: 16f381a28bfadce9d2ee67ae3b165d4a.dir
+      size: 30030
+      nfiles: 2
   save_logs:
     cmd: python3 source/utils/logs.py
     outs:
     - path: exp_logs/slurm
       hash: md5
-      md5: d751713988987e9331980363e24189ce.dir
-      size: 0
-      nfiles: 0
+      md5: fa010d81d559c3016c64d229c4d72d85.dir
+      size: 3604454281
+      nfiles: 640
     - path: exp_logs/tensorboard
       hash: md5
-      md5: d751713988987e9331980363e24189ce.dir
+      md5: f83b462e568e2688259943b165b97b7c.dir
       size: 0
-      nfiles: 0
+      nfiles: 1
   export:
     cmd: python3 source/export.py
     deps:
     - path: model/checkpoints/
       hash: md5
-      md5: d751713988987e9331980363e24189ce.dir
-      size: 0
-      nfiles: 0
+      md5: 16f381a28bfadce9d2ee67ae3b165d4a.dir
+      size: 30030
+      nfiles: 2
     - path: source/export.py
       hash: md5
-      md5: 55fb943d178b71076c39024fcc204ccb
-      size: 3892
+      md5: 14241f39b246d6d3fc9f507d19418cbe
+      size: 3900
     params:
       params.yaml:
         general.input_size: 524288
     outs:
     - path: model/exports/
       hash: md5
-      md5: d751713988987e9331980363e24189ce.dir
-      size: 0
-      nfiles: 0
+      md5: d84972ef74f1aea18d38c93515617599.dir
+      size: 24105
+      nfiles: 1

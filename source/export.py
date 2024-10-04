@@ -7,6 +7,33 @@ from network.tcn import TCN
 from network.CombinedModels import CombinedEncoderDecoder
 import math
 
+def export_model_to_onnx(model, example_input, output_file_path):
+    # Ensure the model is in evaluation mode
+    model.eval()
+
+    # Get the number of dimensions in the input
+    input_dims = len(example_input.shape)
+
+    # Create dynamic axes dictionary
+    dynamic_axes = {
+        'input': {i: f'dim_{i}' for i in range(input_dims)},
+        'output': {i: f'dim_{i}' for i in range(input_dims)}
+    }
+
+    # Export the model
+    torch.onnx.export(model, 
+                      example_input, 
+                      output_file_path,
+                      export_params=True,
+                      opset_version=17,
+                      do_constant_folding=True,
+                      input_names=['input'],
+                      output_names=['output'],
+                      dynamic_axes=dynamic_axes,
+                      verbose=True)
+
+    print(f"Model exported to ONNX format: {output_file_path}")
+
 def main():
     # Load the hyperparameters from the params yaml file into a Dictionary
     params = config.Params('params.yaml')
@@ -97,9 +124,7 @@ def main():
     output_file_path = Path('model/exports/model.onnx')
     output_file_path.parent.mkdir(parents=True, exist_ok=True)
     
-    torch.onnx.export(model, example, output_file_path, export_params=True, opset_version=17, do_constant_folding=True,
-                      input_names=['input'], output_names=['output'],
-                      dynamic_axes={'input': {0: 'batch_size'}, 'output': {0: 'batch_size'}})
+    export_model_to_onnx(model, example, output_file_path)
     print("Model exported to ONNX format.")
 
 if __name__ == "__main__":
