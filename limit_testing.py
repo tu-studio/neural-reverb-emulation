@@ -8,7 +8,6 @@ from source.network.decoder import DecoderTCN
 from source.network.CombinedModels import CombinedEncoderDecoder
 from source.utils import config
 from source.network.ravepqmf import PQMF, center_pad_next_pow_2
-from source.network.metrics import spectral_distance, single_stft_loss, fft_loss
 
 # Load the parameters
 params = config.Params('params.yaml')
@@ -82,39 +81,7 @@ model.eval()  # Set the model to evaluation mode
 # Initialize PQMF
 pqmf = PQMF(100, n_bands)
 
-# Define loss function (you may need to adjust this based on your specific criterion)
-criterion = torch.nn.MSELoss()
-
-def process_audio_chunk(audio_chunk, model, pqmf):
-    # Convert to tensor and add batch dimension
-    audio_chunk = torch.from_numpy(audio_chunk).float().unsqueeze(0)
-    
-    # Pad audio to next power of 2
-    audio_chunk = center_pad_next_pow_2(audio_chunk)
-
-    # Apply PQMF
-    audio_chunk_decomposed = pqmf(audio_chunk)
-
-    # Process through the model
-    with torch.no_grad():
-        if use_kl:
-            mu, logvar, encoder_outputs = encoder(audio_chunk_decomposed)
-            z = encoder.reparameterize(mu, logvar)
-        else:
-            encoder_outputs = encoder(audio_chunk_decomposed)
-            z = encoder_outputs.pop()
-        encoder_outputs = encoder_outputs[::-1]
-        output_decomposed = decoder(z, encoder_outputs)
-
-    # Inverse PQMF
-    output = pqmf.inverse(output_decomposed)
-
-    return output.squeeze(0).numpy(), output_decomposed
-
-def calculate_loss(output_decomposed, target_decomposed):
-    return criterion(output_decomposed, target_decomposed).item()
-
-def process_full_audio(audio, model, pqmf):
+def process_audio(audio, model, pqmf):
     # Convert to tensor and add batch dimension
     audio_tensor = torch.from_numpy(audio).float().unsqueeze(0)
     
@@ -138,75 +105,36 @@ def process_full_audio(audio, model, pqmf):
     # Inverse PQMF
     output = pqmf.inverse(output_decomposed)
 
-    return output.squeeze(0).numpy(), output_decomposed
+    return output.squeeze(0).numpy()
 
 def main():
+    # Set the fixed number of samples
+    n_samples = 2**17 -1
+
     # Process an audio file
     input_file = 'mixkit-creature-sad-crying-465.wav'  # Replace with your input file path
-    output_dir = Path('output_chunks')
+    output_dir = Path('output')
     output_dir.mkdir(exist_ok=True)
 
     # Load audio file
     audio, sample_rate = librosa.load(input_file, sr=None, mono=True)
 
-    # Process full audio
-    full_output, full_output_decomposed = process_full_audio(audio, model, pqmf)
-    
-    # Calculate loss for full audio
-    audio_tensor = torch.from_numpy(audio).float().unsqueeze(0)
-    audio_tensor = center_pad_next_pow_2(audio_tensor)
-    audio_decomposed = pqmf(audio_tensor)
-    full_loss = calculate_loss(full_output_decomposed, audio_decomposed)
-    
-    print(f"Loss for full audio: {full_loss:.6f}")
+    # Cut or pad audio to n_samples
+    if len(audio) > n_samples:
+        audio = audio[:n_samples]
+    elif len(audio) < n_samples:
+        audio = np.pad(audio, (0, n_samples - len(audio)), 'constant')
 
-    # Save full input audio
-    sf.write(output_dir / 'full_input.wav', audio, sample_rate)
+    # Process audio
+    output = process_audio(audio, model, pqmf)
 
-    # Save full reconstructed audio
-    sf.write(output_dir / 'full_output.wav', full_output, sample_rate)
+    # Save input audio
+    sf.write(output_dir / 'input_fixed_length.wav', audio, sample_rate)
 
-    # Define chunk size
-    chunk_size = 524288
+    # Save reconstructed audio
+    sf.write(output_dir / 'output_fixed_length.wav', output, sample_rate)
 
-    # Process audio in chunks
-    total_loss = 0
-    num_chunks = 0
-
-    for i, start in enumerate(range(0, len(audio), chunk_size)):
-        end = start + chunk_size
-        chunk = audio[start:end]
-
-        # If the last chunk is smaller than chunk_size, pad it
-        if len(chunk) < chunk_size:
-            chunk = np.pad(chunk, (0, chunk_size - len(chunk)), 'constant')
-
-        # Process the chunk
-        output, output_decomposed = process_audio_chunk(chunk, model, pqmf)
-
-        # Calculate loss
-        chunk_tensor = torch.from_numpy(chunk).float().unsqueeze(0)
-        chunk_tensor = center_pad_next_pow_2(chunk_tensor)
-        chunk_decomposed = pqmf(chunk_tensor)
-        loss = calculate_loss(output_decomposed, chunk_decomposed)
-        
-        total_loss += loss
-        num_chunks += 1
-        print(f"Loss for chunk {i}: {loss:.6f}")
-
-        # Save input chunk
-        input_chunk_file = output_dir / f'input_chunk_{i}.wav'
-        sf.write(input_chunk_file, chunk, sample_rate)
-
-        # Save reconstructed chunk
-        output_chunk_file = output_dir / f'output_chunk_{i}.wav'
-        sf.write(output_chunk_file, output, sample_rate)
-
-    # Calculate and print average loss
-    avg_loss = total_loss / num_chunks
-    print(f"Average loss for chunks: {avg_loss:.6f}")
-
-    print(f"Processed full audio and {num_chunks} chunks. All files saved in {output_dir}")
+    print(f"Processed audio with {n_samples} samples. Files saved in {output_dir}")
 
 if __name__ == "__main__":
     main()
