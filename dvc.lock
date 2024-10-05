@@ -10,8 +10,8 @@ stages:
       nfiles: 3
     - path: source/network/
       hash: md5
-      md5: a42c3231d8a32c797ee2e59c9d40efb6.dir
-      size: 110066
+      md5: 1e10f233e89f086a5977b39d99bf320d.dir
+      size: 110044
       nfiles: 22
     - path: source/network/CombinedModels.py
       hash: md5
@@ -76,14 +76,14 @@ stages:
         train.batch_size: 1
         train.device_request: cuda
         train.dilate_conv: true
-        train.dilation_growth: 1
-        train.epochs: 1
+        train.dilation_growth: 8
+        train.epochs: 750
         train.input_file: data/processed/preprocessed_data.pt
-        train.kernel_size: 1
+        train.kernel_size: 16
         train.latent_dim: 64
         train.lr: 0.0001
         train.n_bands: 1
-        train.n_blocks: 1
+        train.n_blocks: 4
         train.n_channels: 32
         train.n_inputs: 1
         train.name: model
@@ -103,8 +103,8 @@ stages:
     outs:
     - path: model/checkpoints/
       hash: md5
-      md5: 16f381a28bfadce9d2ee67ae3b165d4a.dir
-      size: 30030
+      md5: 4a3155a5ea51995163a71c3a02c7b1ef.dir
+      size: 8870538
       nfiles: 2
   save_logs:
     cmd: python3 source/utils/logs.py
@@ -124,19 +124,19 @@ stages:
     deps:
     - path: model/checkpoints/
       hash: md5
-      md5: 16f381a28bfadce9d2ee67ae3b165d4a.dir
-      size: 30030
+      md5: 4a3155a5ea51995163a71c3a02c7b1ef.dir
+      size: 8870538
       nfiles: 2
     - path: source/export.py
       hash: md5
-      md5: 14241f39b246d6d3fc9f507d19418cbe
-      size: 3900
+      md5: 5446037fd05ebe724f43eaa53870c428
+      size: 4586
     params:
       params.yaml:
         general.input_size: 524288
     outs:
     - path: model/exports/
       hash: md5
-      md5: d84972ef74f1aea18d38c93515617599.dir
-      size: 24105
+      md5: 5346836238cf81b11b78d56c960e1c05.dir
+      size: 9129790
       nfiles: 1
