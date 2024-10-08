@@ -9,9 +9,16 @@ from source.network.CombinedModels import CombinedEncoderDecoder
 from source.utils import config
 from source.network.ravepqmf import PQMF, center_pad_next_pow_2
 from source.network.metrics import spectral_distance, single_stft_loss, fft_loss
+from pedalboard.io import AudioFile
 
 # Load the parameters
 params = config.Params('params.yaml')
+
+def normalize_audio(audio):
+    max_val = np.max(np.abs(audio))
+    if max_val > 1.0:
+        return audio / max_val
+    return audio
 
 # Load model parameters
 n_bands = params["train"]["n_bands"]
@@ -72,8 +79,8 @@ decoder = DecoderTCN(
 # Load the model state
 encoder_path = Path('model/checkpoints/encoder.pth')
 decoder_path = Path('model/checkpoints/decoder.pth')
-encoder.load_state_dict(torch.load(encoder_path, map_location=torch.device('cpu'), weight_only=True))
-decoder.load_state_dict(torch.load(decoder_path, map_location=torch.device('cpu'), weight_only=True))
+encoder.load_state_dict(torch.load(encoder_path, map_location=torch.device('cpu')))
+decoder.load_state_dict(torch.load(decoder_path, map_location=torch.device('cpu')))
 
 # Combine encoder and decoder
 model = CombinedEncoderDecoder(encoder, decoder)
@@ -114,15 +121,15 @@ def process_audio_chunk(audio_chunk, model, pqmf):
 def calculate_loss(output_decomposed, target_decomposed):
     return criterion(output_decomposed, target_decomposed).item()
 
-def process_full_audio(audio, model, pqmf):
+def process_full_audio(audio, pqmf):
     # Convert to tensor and add batch dimension
-    audio_tensor = torch.from_numpy(audio).float().unsqueeze(0)
+    audio_tensor = torch.from_numpy(audio).unsqueeze(0)
     
     # Pad audio to next power of 2
-    audio_tensor = center_pad_next_pow_2(audio_tensor)
+    # audio_tensor = center_pad_next_pow_2(audio_tensor)
 
     # Apply PQMF
-    audio_decomposed = pqmf(audio_tensor)
+    audio_decomposed = audio_tensor
 
     # Process through the model
     with torch.no_grad():
@@ -136,7 +143,7 @@ def process_full_audio(audio, model, pqmf):
         output_decomposed = decoder(z, encoder_outputs)
 
     # Inverse PQMF
-    output = pqmf.inverse(output_decomposed)
+    output = output_decomposed
 
     return output.squeeze(0).numpy(), output_decomposed
 
@@ -147,10 +154,23 @@ def main():
     output_dir.mkdir(exist_ok=True)
 
     # Load audio file
-    audio, sample_rate = librosa.load(input_file, sr=None, mono=True)
+    with AudioFile(input_file) as f:
+        audio = f.read(f.frames)
+        sample_rate = f.samplerate
+
+        # If stereo, convert to mono by taking the mean of both channels
+        if audio.ndim > 1 and audio.shape[0] > 1:
+            audio = np.mean(audio, axis=0)
+        else:
+            audio = audio.squeeze() 
+
+    # manage clipping
+    audio = normalize_audio(audio)
+
+    print(audio.shape)
 
     # Process full audio
-    full_output, full_output_decomposed = process_full_audio(audio, model, pqmf)
+    full_output, full_output_decomposed = process_full_audio(audio, pqmf)
     
     # Calculate loss for full audio
     audio_tensor = torch.from_numpy(audio).float().unsqueeze(0)
