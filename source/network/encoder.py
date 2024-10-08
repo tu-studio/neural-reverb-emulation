@@ -1,5 +1,5 @@
 import torch
-import torch.nn.utils.weight_norm as wn
+from torch.nn.utils.parametrizations import weight_norm as wn
 
 class EncoderTCNBlock(torch.nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size, dilation, activation='prelu', use_wn=True, use_batch_norm=True, stride=1, padding=0):

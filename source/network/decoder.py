@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-import torch.nn.utils.weight_norm as wn
+from torch.nn.utils.parametrizations import weight_norm as wn
 
 class ResidualLayer(nn.Module):
     def __init__(self, channels, kernel_size, dilation, activation='prelu'):
