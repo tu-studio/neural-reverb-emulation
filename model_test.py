@@ -72,8 +72,8 @@ decoder = DecoderTCN(
 # Load the model state
 encoder_path = Path('model/checkpoints/encoder.pth')
 decoder_path = Path('model/checkpoints/decoder.pth')
-encoder.load_state_dict(torch.load(encoder_path, map_location=torch.device('cpu')))
-decoder.load_state_dict(torch.load(decoder_path, map_location=torch.device('cpu')))
+encoder.load_state_dict(torch.load(encoder_path, map_location=torch.device('cpu'), weight_only=True))
+decoder.load_state_dict(torch.load(decoder_path, map_location=torch.device('cpu'), weight_only=True))
 
 # Combine encoder and decoder
 model = CombinedEncoderDecoder(encoder, decoder)
@@ -166,47 +166,47 @@ def main():
     # Save full reconstructed audio
     sf.write(output_dir / 'full_output.wav', full_output, sample_rate)
 
-    # Define chunk size
-    chunk_size = 524288
+    # # Define chunk size
+    # chunk_size = 524288
 
-    # Process audio in chunks
-    total_loss = 0
-    num_chunks = 0
+    # # Process audio in chunks
+    # total_loss = 0
+    # num_chunks = 0
 
-    for i, start in enumerate(range(0, len(audio), chunk_size)):
-        end = start + chunk_size
-        chunk = audio[start:end]
+    # for i, start in enumerate(range(0, len(audio), chunk_size)):
+    #     end = start + chunk_size
+    #     chunk = audio[start:end]
 
-        # If the last chunk is smaller than chunk_size, pad it
-        if len(chunk) < chunk_size:
-            chunk = np.pad(chunk, (0, chunk_size - len(chunk)), 'constant')
+    #     # If the last chunk is smaller than chunk_size, pad it
+    #     if len(chunk) < chunk_size:
+    #         chunk = np.pad(chunk, (0, chunk_size - len(chunk)), 'constant')
 
-        # Process the chunk
-        output, output_decomposed = process_audio_chunk(chunk, model, pqmf)
+    #     # Process the chunk
+    #     output, output_decomposed = process_audio_chunk(chunk, model, pqmf)
 
-        # Calculate loss
-        chunk_tensor = torch.from_numpy(chunk).float().unsqueeze(0)
-        chunk_tensor = center_pad_next_pow_2(chunk_tensor)
-        chunk_decomposed = pqmf(chunk_tensor)
-        loss = calculate_loss(output_decomposed, chunk_decomposed)
+    #     # Calculate loss
+    #     chunk_tensor = torch.from_numpy(chunk).float().unsqueeze(0)
+    #     chunk_tensor = center_pad_next_pow_2(chunk_tensor)
+    #     chunk_decomposed = pqmf(chunk_tensor)
+    #     loss = calculate_loss(output_decomposed, chunk_decomposed)
         
-        total_loss += loss
-        num_chunks += 1
-        print(f"Loss for chunk {i}: {loss:.6f}")
+    #     total_loss += loss
+    #     num_chunks += 1
+    #     print(f"Loss for chunk {i}: {loss:.6f}")
 
-        # Save input chunk
-        input_chunk_file = output_dir / f'input_chunk_{i}.wav'
-        sf.write(input_chunk_file, chunk, sample_rate)
+    #     # Save input chunk
+    #     input_chunk_file = output_dir / f'input_chunk_{i}.wav'
+    #     sf.write(input_chunk_file, chunk, sample_rate)
 
-        # Save reconstructed chunk
-        output_chunk_file = output_dir / f'output_chunk_{i}.wav'
-        sf.write(output_chunk_file, output, sample_rate)
+    #     # Save reconstructed chunk
+    #     output_chunk_file = output_dir / f'output_chunk_{i}.wav'
+    #     sf.write(output_chunk_file, output, sample_rate)
 
-    # Calculate and print average loss
-    avg_loss = total_loss / num_chunks
-    print(f"Average loss for chunks: {avg_loss:.6f}")
+    # # Calculate and print average loss
+    # avg_loss = total_loss / num_chunks
+    # print(f"Average loss for chunks: {avg_loss:.6f}")
 
-    print(f"Processed full audio and {num_chunks} chunks. All files saved in {output_dir}")
+    # print(f"Processed full audio and {num_chunks} chunks. All files saved in {output_dir}")
 
 if __name__ == "__main__":
     main()

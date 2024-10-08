@@ -71,25 +71,29 @@ decoder = DecoderTCN(
 # Load the model state
 encoder_path = Path('model/checkpoints/encoder.pth')
 decoder_path = Path('model/checkpoints/decoder.pth')
-encoder.load_state_dict(torch.load(encoder_path, map_location=torch.device('cpu')))
-decoder.load_state_dict(torch.load(decoder_path, map_location=torch.device('cpu')))
+encoder.load_state_dict(torch.load(encoder_path, map_location=torch.device('cpu'), weights_only=True))
+decoder.load_state_dict(torch.load(decoder_path, map_location=torch.device('cpu'), weights_only=True))
 
-# Combine encoder and decoder
-model = CombinedEncoderDecoder(encoder, decoder)
-model.eval()  # Set the model to evaluation mode
+# Set models to evaluation mode
+encoder.eval()
+decoder.eval()
 
 # Initialize PQMF
 pqmf = PQMF(100, n_bands)
 
-def process_audio(audio, model, pqmf):
+def process_audio(audio, encoder, decoder, pqmf):
     # Convert to tensor and add batch dimension
     audio_tensor = torch.from_numpy(audio).float().unsqueeze(0)
     
-    # Pad audio to next power of 2
-    audio_tensor = center_pad_next_pow_2(audio_tensor)
+    # Pad audio to next power of 2 if n_bands > 1
+    if n_bands > 1:
+        audio_tensor = center_pad_next_pow_2(audio_tensor)
 
-    # Apply PQMF
-    audio_decomposed = pqmf(audio_tensor)
+    # Apply PQMF if n_bands > 1
+    if n_bands > 1:
+        audio_decomposed = pqmf(audio_tensor)
+    else:
+        audio_decomposed = audio_tensor
 
     # Process through the model
     with torch.no_grad():
@@ -102,14 +106,17 @@ def process_audio(audio, model, pqmf):
         encoder_outputs = encoder_outputs[::-1]
         output_decomposed = decoder(z, encoder_outputs)
 
-    # Inverse PQMF
-    output = pqmf.inverse(output_decomposed)
+    # Inverse PQMF if n_bands > 1
+    if n_bands > 1:
+        output = pqmf.inverse(output_decomposed)
+    else:
+        output = output_decomposed
 
     return output.squeeze(0).numpy()
 
 def main():
     # Set the fixed number of samples
-    n_samples = 2**17 -1
+    n_samples = 2**19
 
     # Process an audio file
     input_file = 'mixkit-creature-sad-crying-465.wav'  # Replace with your input file path
@@ -126,7 +133,7 @@ def main():
         audio = np.pad(audio, (0, n_samples - len(audio)), 'constant')
 
     # Process audio
-    output = process_audio(audio, model, pqmf)
+    output = process_audio(audio, encoder, decoder, pqmf)
 
     # Save input audio
     sf.write(output_dir / 'input_fixed_length.wav', audio, sample_rate)
