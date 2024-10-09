@@ -57,6 +57,7 @@ def main():
     use_latent = params["train"]["use_latent"]
     dilate_conv = params["train"]["dilate_conv"]
     activation = params["train"]["activation"]
+    use_upsampling = params["train"]["use_upsampling"]
 
     # Define the model based on the architecture used in training
     if not use_tcn:
@@ -89,7 +90,8 @@ def main():
             use_residual=use_residual,
             dilate_conv=dilate_conv,
             use_latent=use_latent,
-            activation=activation
+            activation=activation,
+            use_upsampling=use_upsampling
         )
         
         model = CombinedEncoderDecoder(encoder, decoder)

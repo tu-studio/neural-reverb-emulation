@@ -67,6 +67,7 @@ stages:
     - train.activation
     - train.stride
     - train.padding
+    - train.use_upsampling
     - metrics.loss_function
     - metrics.additional_mse
     - metrics.additional_spec
