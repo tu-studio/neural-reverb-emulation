@@ -10,8 +10,8 @@ stages:
       nfiles: 3
     - path: source/network/
       hash: md5
-      md5: a42c3231d8a32c797ee2e59c9d40efb6.dir
-      size: 110066
+      md5: d8799b4a3fbfd626fd45449b800f83f7.dir
+      size: 110090
       nfiles: 22
     - path: source/network/CombinedModels.py
       hash: md5
@@ -76,18 +76,18 @@ stages:
         train.batch_size: 1
         train.device_request: cuda
         train.dilate_conv: true
-        train.dilation_growth: 1
-        train.epochs: 1
+        train.dilation_growth: 12
+        train.epochs: 750
         train.input_file: data/processed/preprocessed_data.pt
-        train.kernel_size: 1
-        train.latent_dim: 64
+        train.kernel_size: 12
+        train.latent_dim: 32
         train.lr: 0.0001
         train.n_bands: 1
-        train.n_blocks: 1
+        train.n_blocks: 4
         train.n_channels: 32
         train.n_inputs: 1
         train.name: model
-        train.padding: 71
+        train.padding: 0
         train.scheduler_rate: 0.1
         train.stride: 1
         train.use_adversarial: false
@@ -97,14 +97,14 @@ stages:
         train.use_noise: false
         train.use_pqmf: true
         train.use_residual: true
-        train.use_skip: true
+        train.use_skip: false
         train.use_tcn: false
         train.use_wn: false
     outs:
     - path: model/checkpoints/
       hash: md5
-      md5: 16f381a28bfadce9d2ee67ae3b165d4a.dir
-      size: 30030
+      md5: b7ba423e58a46802e7ecf3cab138182d.dir
+      size: 6190026
       nfiles: 2
   save_logs:
     cmd: python3 source/utils/logs.py
@@ -124,19 +124,19 @@ stages:
     deps:
     - path: model/checkpoints/
       hash: md5
-      md5: 16f381a28bfadce9d2ee67ae3b165d4a.dir
-      size: 30030
+      md5: b7ba423e58a46802e7ecf3cab138182d.dir
+      size: 6190026
       nfiles: 2
     - path: source/export.py
       hash: md5
-      md5: 14241f39b246d6d3fc9f507d19418cbe
-      size: 3900
+      md5: 5446037fd05ebe724f43eaa53870c428
+      size: 4586
     params:
       params.yaml:
         general.input_size: 524288
     outs:
     - path: model/exports/
       hash: md5
-      md5: d84972ef74f1aea18d38c93515617599.dir
-      size: 24105
+      md5: 630896e42b5aba7fad4c41fb79a3a20d.dir
+      size: 6231035
       nfiles: 1
