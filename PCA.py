@@ -107,17 +107,31 @@ with torch.no_grad():
     z_pca = z.squeeze().cpu().numpy().T
     pca = PCA(n_components=0.95)  # Keep 95% of variance
     z_pca_reduced = pca.fit_transform(z_pca)
+
+    # Non-modulated reconstruction
     z_reconstructed = pca.inverse_transform(z_pca_reduced)
     z_reconstructed = torch.from_numpy(z_reconstructed.T).float().unsqueeze(0).to(z.device)
+    output_non_modulated = decoder(z_reconstructed, encoder_outputs[::-1])
 
-    # Decode
-    output = decoder(z_reconstructed, encoder_outputs[::-1])
+    # Apply modulation in PCA space
+    modulation_rate = 4  # Adjust this value to control the modulation intensity
+    time = np.linspace(0, 2*np.pi, z_pca_reduced.shape[0])
+    modulation = np.sin(time)[:, np.newaxis]
+    z_pca_modulated = z_pca_reduced + modulation_rate * modulation * z_pca_reduced
 
-# Convert output to numpy array and write to file
-output = output.squeeze().cpu().numpy()
-sf.write(output_dir / 'full_output_PCA.wav', output, sample_rate)
+    # Modulated reconstruction
+    z_reconstructed_modulated = pca.inverse_transform(z_pca_modulated)
+    z_reconstructed_modulated = torch.from_numpy(z_reconstructed_modulated.T).float().unsqueeze(0).to(z.device)
+    output_modulated = decoder(z_reconstructed_modulated, encoder_outputs[::-1])
 
-print("Processing complete. Check the output directory for the processed audio file.")
+# Convert outputs to numpy arrays and write to files
+output_non_modulated = output_non_modulated.squeeze().cpu().numpy()
+output_modulated = output_modulated.squeeze().cpu().numpy()
+
+sf.write(output_dir / 'output_PCA_non_modulated.wav', output_non_modulated, sample_rate)
+sf.write(output_dir / 'output_PCA_modulated.wav', output_modulated, sample_rate)
+
+print("Processing complete. Check the output directory for both the non-modulated and modulated audio files.")
 
 # Optional: Print PCA information
 n_components = pca.n_components_
