@@ -1,27 +1,19 @@
 import torch
-import librosa
 import soundfile as sf
 import numpy as np
 from pathlib import Path
-import matplotlib.pyplot as plt
 from source.network.encoder import EncoderTCN
 from source.network.decoder import DecoderTCN
-from source.network.CombinedModels import CombinedEncoderDecoder
 from source.utils import config
-from source.network.ravepqmf import PQMF, center_pad_next_pow_2
-from source.network.metrics import spectral_distance, single_stft_loss, fft_loss
 from pedalboard.io import AudioFile
 from sklearn.decomposition import PCA
-from sklearn.preprocessing import StandardScaler
 
 # Load the parameters
 params = config.Params('params.yaml')
 
 def normalize_audio(audio):
     max_val = np.max(np.abs(audio))
-    if max_val > 1.0:
-        return audio / max_val
-    return audio
+    return audio / max_val if max_val > 1.0 else audio
 
 # Load model parameters
 n_bands = params["train"]["n_bands"]
@@ -82,12 +74,14 @@ decoder = DecoderTCN(
 # Load the model state
 encoder_path = Path('model/checkpoints/encoder.pth')
 decoder_path = Path('model/checkpoints/decoder.pth')
-encoder.load_state_dict(torch.load(encoder_path, map_location=torch.device('cpu')))
-decoder.load_state_dict(torch.load(decoder_path, map_location=torch.device('cpu')))
+encoder.load_state_dict(torch.load(encoder_path, map_location='cpu'))
+decoder.load_state_dict(torch.load(decoder_path, map_location='cpu'))
 
+encoder.eval()
+decoder.eval()
 
 input_file = 'output/input_fixed_length.wav'  
-output_dir = Path('output_chunks')
+output_dir = Path('output')
 output_dir.mkdir(exist_ok=True)
 
 # Load audio file
@@ -95,103 +89,37 @@ with AudioFile(input_file) as f:
     audio = f.read(f.frames)
     sample_rate = f.samplerate
 
-    # If stereo, convert to mono by taking the mean of both channels
-    if audio.ndim > 1 and audio.shape[0] > 1:
-        audio = np.mean(audio, axis=0)
-    else:
-        audio = audio.squeeze() 
+# Convert to mono if stereo
+audio = np.mean(audio, axis=0) if audio.ndim > 1 and audio.shape[0] > 1 else audio.squeeze()
 
-# manage clipping
+# Normalize audio
 audio = normalize_audio(audio)
 
-audio_tensor = torch.from_numpy(audio)
-audio_tensor = audio_tensor.unsqueeze(0).unsqueeze(0)
-
-# Apply PQMF
-audio_decomposed = audio_tensor
+# Convert to tensor
+audio_tensor = torch.from_numpy(audio).float().unsqueeze(0).unsqueeze(0)
 
 # Process through the model
 with torch.no_grad():
-    encoder_outputs = encoder(audio_decomposed)
+    encoder_outputs = encoder(audio_tensor)
     z = encoder_outputs.pop()
 
-print(z.shape)
-z_pca = z.squeeze()
-print(z.shape)
-z_pca = z_pca.numpy()
+    # Perform PCA
+    z_pca = z.squeeze().cpu().numpy().T
+    pca = PCA(n_components=0.95)  # Keep 95% of variance
+    z_pca_reduced = pca.fit_transform(z_pca)
+    z_reconstructed = pca.inverse_transform(z_pca_reduced)
+    z_reconstructed = torch.from_numpy(z_reconstructed.T).float().unsqueeze(0).to(z.device)
 
-# Calculate variance along each dimension
-variances = np.var(z_pca, axis=1)
+    # Decode
+    output = decoder(z_reconstructed, encoder_outputs[::-1])
 
-print(variances)
+# Convert output to numpy array and write to file
+output = output.squeeze().cpu().numpy()
+sf.write(output_dir / 'full_output_PCA.wav', output, sample_rate)
 
-# Sort variances in descending order
-sorted_indices = np.argsort(variances)[::-1]
-sorted_variances = variances[sorted_indices]
+print("Processing complete. Check the output directory for the processed audio file.")
 
-
-total_variance = np.sum(variances)
-cumulative_variance_ratio = np.cumsum(sorted_variances) / total_variance
-
-n_dimensions_95 = np.argmax(cumulative_variance_ratio >= 0.95) + 1
-print(f"Number of dimensions needed to explain 95% of variance: {n_dimensions_95}")
-
-
-
-n_top_dimensions = 10 
-print("Top 10 most important dimensions:")
-for i, idx in enumerate(sorted_indices[:n_top_dimensions], 1):
-    print(f"{i}. Dimension index: {idx}, Variance: {variances[idx]:.4f}")
-
-
-z_pca = z_pca.T
-#Perform PCA
-pca = PCA()
-pca_result = pca.fit_transform(z_pca)
-
-print(pca_result.shape)
-
-# Calculate cumulative explained variance ratio
-cumulative_variance_ratio = np.cumsum(pca.explained_variance_ratio_)
-
-print("explained variance ratio:", pca.explained_variance_ratio_)
-
-# Determine number of dimensions for 95% variance explained
-n_dimensions_95 = np.argmax(cumulative_variance_ratio >= 0.95) + 1
-print(f"Number of latent dimensions needed to explain 95% of variance: {n_dimensions_95}")
-
-print("pca components:", pca.components_)
-
-# Analyze the top 10 most important latent dimensions
-n_top_dimensions = 10
-dimension_importance = np.sum(np.abs(pca.components_), axis=0)
-top_dimension_indices = np.argsort(dimension_importance)[-n_top_dimensions:][::-1]
-
-print(top_dimension_indices)
-
-print("\nTop 10 most important latent dimensions:")
-for i, idx in enumerate(top_dimension_indices, 1):
-    print(f"{i}. Dimension index: {idx}, Importance: {dimension_importance[idx]:.4f}")
-
-
-# Perform PCA with the determined number of dimensions
-pca = PCA(n_components=n_dimensions_95)
-pca_result = pca.fit_transform(z_pca)
-
-z_reconstructed = pca.inverse_transform(pca_result)
-
-encoder_outputs = encoder_outputs[::-1]
-
-print(z_reconstructed.shape)
-z_reconstructed = z_reconstructed.T
-z_reconstructed = torch.from_numpy(z_reconstructed).unsqueeze(0)
-
-print(z_reconstructed.shape)
-
-output = decoder(z_reconstructed, encoder_outputs)
-
-output = output.squeeze(0).squeeze(0).detach().numpy()
-
-sf.write(output_dir / 'full_output_3.wav', output, sample_rate)
-print(pca_result.shape)
-print(z_reconstructed.shape)
+# Optional: Print PCA information
+n_components = pca.n_components_
+print(f"Number of PCA components retained: {n_components}")
+print(f"Explained variance ratio: {pca.explained_variance_ratio_.sum():.4f}")
