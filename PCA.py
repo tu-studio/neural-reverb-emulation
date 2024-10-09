@@ -190,7 +190,7 @@ print(z_reconstructed.shape)
 
 output = decoder(z_reconstructed, encoder_outputs)
 
-output = output.squeeze(0).squeeze(0).numpy()
+output = output.squeeze(0).squeeze(0).detach().numpy()
 
 sf.write(output_dir / 'full_output_3.wav', output, sample_rate)
 print(pca_result.shape)

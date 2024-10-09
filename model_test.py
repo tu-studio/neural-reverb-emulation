@@ -149,7 +149,7 @@ def process_full_audio(audio, pqmf):
 
 def main():
     # Process an audio file
-    input_file = 'mixkit-creature-sad-crying-465.wav'  # Replace with your input file path
+    input_file = 'output/input_fixed_length.wav'  # Replace with your input file path
     output_dir = Path('output_chunks')
     output_dir.mkdir(exist_ok=True)
 
@@ -174,7 +174,7 @@ def main():
     
     # Calculate loss for full audio
     audio_tensor = torch.from_numpy(audio).float().unsqueeze(0)
-    audio_tensor = center_pad_next_pow_2(audio_tensor)
+    # audio_tensor = center_pad_next_pow_2(audio_tensor)
     audio_decomposed = pqmf(audio_tensor)
     full_loss = calculate_loss(full_output_decomposed, audio_decomposed)
     
