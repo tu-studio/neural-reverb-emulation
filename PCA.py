@@ -180,5 +180,18 @@ pca_result = pca.fit_transform(z_pca)
 
 z_reconstructed = pca.inverse_transform(pca_result)
 
+encoder_outputs = encoder_outputs[::-1]
+
+print(z_reconstructed.shape)
+z_reconstructed = z_reconstructed.T
+z_reconstructed = torch.from_numpy(z_reconstructed).unsqueeze(0)
+
+print(z_reconstructed.shape)
+
+output = decoder(z_reconstructed, encoder_outputs)
+
+output = output.squeeze(0).squeeze(0).numpy()
+
+sf.write(output_dir / 'full_output_2.wav', output, sample_rate)
 print(pca_result.shape)
 print(z_reconstructed.shape)
