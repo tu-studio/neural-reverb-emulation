@@ -8,7 +8,7 @@ from utils import config
 import os
 from tqdm import tqdm
 
-def train(encoder, decoder, discriminator, train_loader, val_loader, criterion, optimizer, d_optimizer, scheduler, tensorboard_writer, num_epochs=25, device='cpu', n_bands=64, use_kl=False, use_adversarial=False, sample_rate=44100, additional_metrics=None, gan_loss=None):
+def train(encoder, decoder, discriminator, train_loader, val_loader, criterion, optimizer, d_optimizer, scheduler, tensorboard_writer, num_epochs=25, device='cpu', n_bands=64, use_kl=False, use_adversarial=False, sample_rate=44100, additional_metrics=None, gan_loss=None, receptive_field=0, use_upsampling=True):
     encoder.to(device)
     if decoder:
         decoder.to(device)
@@ -75,6 +75,8 @@ def train(encoder, decoder, discriminator, train_loader, val_loader, criterion, 
 
                 encoder_outputs = encoder_outputs[::-1]
                 output_decomposed = decoder(z, encoder_outputs)
+                if not use_upsampling:
+                    wet_audio_decomposed = wet_audio_decomposed[..., receptive_field:]
             else:
                 # TCN architecture
                 rf = encoder.compute_receptive_field()
@@ -195,9 +197,11 @@ def train(encoder, decoder, discriminator, train_loader, val_loader, criterion, 
                     else:
                         encoder_outputs = encoder(dry_audio_decomposed)
                         z = encoder_outputs.pop()
-
+                        
                     encoder_outputs = encoder_outputs[::-1]
                     output_decomposed = decoder(z, encoder_outputs)
+                    if not use_upsampling:
+                        wet_audio_decomposed = wet_audio_decomposed[..., receptive_field:]
                 else:
                     # TCN architecture
                     rf = encoder.compute_receptive_field()

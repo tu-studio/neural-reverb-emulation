@@ -2,7 +2,7 @@ import torch
 from network.ravepqmf import PQMF, center_pad_next_pow_2
 from tqdm import tqdm
 
-def test(encoder, decoder, test_loader, criterion, tensorboard_writer, device='cpu', n_bands=64, use_kl=False, sample_rate=44100):
+def test(encoder, decoder, test_loader, criterion, tensorboard_writer, device='cpu', n_bands=64, use_kl=False, sample_rate=44100,receptive_field=0, use_upsampling=True):
     encoder.to(device)
     if decoder:
         decoder.to(device)
@@ -59,6 +59,8 @@ def test(encoder, decoder, test_loader, criterion, tensorboard_writer, device='c
 
                 encoder_outputs = encoder_outputs[::-1]
                 output_decomposed = decoder(z, encoder_outputs)
+                if not use_upsampling:
+                    wet_audio_decomposed = wet_audio_decomposed[..., receptive_field:]
             else:
                 # TCN architecture
                 rf = encoder.compute_receptive_field()

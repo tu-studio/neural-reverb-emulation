@@ -86,10 +86,9 @@ def main():
     activation = params["train"]["activation"]  
     stride = params["train"]["stride"]
     padding = params["train"]["padding"]
+    use_upsampling = params["train"]["use_upsampling"]
     additional_metrics = [ additional_spec ,additional_stft, additional_fft, additional_mse]
 
-    final_size = calculate_final_input_size(input_size, n_bands, dilation_growth, n_blocks, kernel_size)
-    print("final size = ", final_size)
 
     # Calculate the receptive field
     receptive_field = calculate_receptive(
@@ -103,6 +102,8 @@ def main():
         dilate_conv=dilate_conv
     )
 
+    final_size = input_size - receptive_field
+    print("final size = ", final_size)
 
     # Create a SummaryWriter object to write the tensorboard logs
     tensorboard_path = logs.return_tensorboard_path()
@@ -169,7 +170,8 @@ def main():
             use_latent=use_latent,
             activation=activation,
             stride=stride,
-            padding=padding)
+            padding=padding,
+            use_upsampling=use_upsampling)
         
         random_input = torch.randn(1, n_bands, int(2**math.ceil(math.log2(input_size))/n_bands))
         random_skips = []
@@ -297,9 +299,9 @@ def main():
     if not use_tcn:
         train(encoder, decoder, discriminator,train_loader, val_loader, criterion, optimizer, d_optimizer, scheduler,
               tensorboard_writer=writer, num_epochs=n_epochs, device=device,
-              n_bands=n_bands, use_kl=use_kl, use_adversarial=use_adversarial, sample_rate=sample_rate, additional_metrics= additional_metrics, gan_loss = gan_loss)
+              n_bands=n_bands, use_kl=use_kl, use_adversarial=use_adversarial, sample_rate=sample_rate, additional_metrics= additional_metrics, gan_loss = gan_loss, receptive_field=receptive_field, use_upsampling=use_upsampling)
         
-        test(encoder, decoder, test_loader, criterion, writer, device, n_bands, use_kl, sample_rate)
+        test(encoder, decoder, test_loader, criterion, writer, device, n_bands, use_kl, sample_rate, receptive_field, use_upsampling)
 
         # Save the models
         save_dir = Path('model/checkpoints')

@@ -123,8 +123,9 @@ def calculate_loss(output_decomposed, target_decomposed):
 
 def process_full_audio(audio, pqmf):
     # Convert to tensor and add batch dimension
-    audio_tensor = torch.from_numpy(audio).unsqueeze(0)
+    audio_tensor = torch.from_numpy(audio).unsqueeze(0).unsqueeze(0)
     
+    print(audio_tensor.shape)
     # Pad audio to next power of 2
     # audio_tensor = center_pad_next_pow_2(audio_tensor)
 
@@ -182,7 +183,7 @@ def main():
 
     # Save full input audio
     sf.write(output_dir / 'full_input.wav', audio, sample_rate)
-
+    full_output = full_output.squeeze()
     # Save full reconstructed audio
     sf.write(output_dir / 'full_output.wav', full_output, sample_rate)
 
