@@ -21,17 +21,17 @@ train:
   n_inputs: 1
   n_bands: 1
   latent_dim: 64
-  epochs: 750
+  epochs: 1
   batch_size: 1
   kernel_size: 16
-  n_blocks: 4
+  n_blocks: 2
   dilation_growth: 8
   dilate_conv: true
   n_channels: 32
   stride: 1
   lr: 0.0001
   use_kl: false
-  use_skip: false
+  use_skip: true
   use_latent: 'conv' # Options: 'dense', 'conv', "None"
   use_tcn: false
   use_pqmf: true

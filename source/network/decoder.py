@@ -45,6 +45,7 @@ class DecoderTCNBlock(nn.Module):
         self.sigmoid = nn.Sigmoid()
 
         self.use_skip = use_skip
+        self.use_upsampling = use_upsampling
 
     def forward(self, x, skip=None):
         x=self.conv(x)
@@ -52,6 +53,8 @@ class DecoderTCNBlock(nn.Module):
         if self.residual_stack:
             x = self.residual_stack(x)
         if self.use_skip and skip is not None:
+            if not self.use_upsampling:
+                skip = skip[:, :, (skip.shape[-1]-x.shape[-1]):]
             gate = self.sigmoid(self.gate(torch.cat([x, skip], dim=1)))
             x = x + gate * skip
         return x
@@ -83,6 +86,7 @@ class DecoderTCN(nn.Module):
         self.use_noise = use_noise
         self.use_latent = use_latent
         self.latent_dim = latent_dim
+        
 
         initial_channels = n_channels * (2 ** (n_blocks - 1))
         self.initial_channels = initial_channels
