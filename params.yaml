@@ -19,12 +19,12 @@ train:
   scheduler_rate: 0.1
   device_request: cuda
   n_inputs: 1
-  n_bands: 2
+  n_bands: 1
   latent_dim: 64
-  epochs: 1
+  epochs: 500
   batch_size: 1
-  kernel_size: 10
-  n_blocks: 2
+  kernel_size: 16
+  n_blocks: 4
   dilation_growth: 8
   dilate_conv: true
   n_channels: 32

@@ -50,17 +50,19 @@ def find_optimal_params(input_size, n_bands, n_blocks, dilate_conv=False, dense=
     return max_kernel_size, max_dilation_growth
 
 def generate_hyperparams(input_size):
-    n_bands_options = [1, 2, 4]
+    n_bands_options = [1]
     n_blocks_options = [4]
-    latent_dim_options = [32, 64, 16]
+    latent_dim_options = [64]
     use_skips_options = [True, False]
-    use_latent_options = ['dense', 'conv']
+    use_latent_options = ['conv']
     
     configurations = []
     
-    for n_bands, n_blocks in itertools.product(n_bands_options, n_blocks_options):
-        kernel_size, dilation_growth = find_optimal_params(input_size, n_bands, n_blocks, True, False)
-        configurations.append((n_bands, kernel_size, n_blocks, dilation_growth))
+    # for n_bands, n_blocks in itertools.product(n_bands_options, n_blocks_options):
+    #     kernel_size, dilation_growth = find_optimal_params(input_size, n_bands, n_blocks, True, False)
+    #     configurations.append((n_bands, kernel_size, n_blocks, dilation_growth))
+
+    configurations.append((1,16,4,8))
     
     use_kl_options = [False]
     use_adversarial_options = [False]
@@ -69,7 +71,7 @@ def generate_hyperparams(input_size):
     use_wn_options = [False]
     use_batch_norm_options = [False]
     loss_function_options = ['combined']
-    activation_options = ['prelu', 'leaky_relu']
+    activation_options = ['prelu']
     
 
     for (n_bands, kernel_size, n_blocks, dilation_growth), latent_dim, use_kl, use_adversarial, use_skips, use_noise, use_residual_stack, use_wn, use_batch_norm, loss_function, activation, use_latent in itertools.product(
