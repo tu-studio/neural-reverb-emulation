@@ -16,14 +16,18 @@ from pathlib import Path
 import math
 import os
 
-def calculate_receptive(n_blocks, kernel_size, dilation_growth, padding, input_length, stride=2, n_bands=2, dilate_conv=True):
+def calculate_receptive(n_blocks, kernel_size, dilation_growth, padding, input_length, stride=2, n_bands=2, dilate_conv=True, no_pqmf = False):
     output_length = input_length
     if n_bands > 1:
         padded_input_size = 2 ** math.ceil(math.log2(input_length))
     else:
         padded_input_size = input_length
 
-    output_length = padded_input_size // n_bands
+    if no_pqmf:
+        output_length = padded_input_size
+    else:
+        output_length = padded_input_size // n_bands
+
     
     for i in range(n_blocks):
         dilation = dilation_growth ** (i + 1)
@@ -99,11 +103,25 @@ def main():
         input_length=input_size,
         stride=stride,
         n_bands=n_bands,
-        dilate_conv=dilate_conv
+        dilate_conv=dilate_conv,
+        no_pqmf=False
     )
 
     final_size = input_size - receptive_field
     print("final size = ", final_size)
+
+     # Calculate the receptive field
+    receptive_field_train = calculate_receptive(
+        n_blocks=n_blocks,
+        kernel_size=kernel_size,
+        dilation_growth=dilation_growth,
+        padding=padding,
+        input_length=input_size,
+        stride=stride,
+        n_bands=n_bands,
+        dilate_conv=dilate_conv,
+        no_pqmf=True
+    )
 
     # Create a SummaryWriter object to write the tensorboard logs
     tensorboard_path = logs.return_tensorboard_path()
@@ -299,9 +317,9 @@ def main():
     if not use_tcn:
         train(encoder, decoder, discriminator,train_loader, val_loader, criterion, optimizer, d_optimizer, scheduler,
               tensorboard_writer=writer, num_epochs=n_epochs, device=device,
-              n_bands=n_bands, use_kl=use_kl, use_adversarial=use_adversarial, sample_rate=sample_rate, additional_metrics= additional_metrics, gan_loss = gan_loss, receptive_field=receptive_field, use_upsampling=use_upsampling)
+              n_bands=n_bands, use_kl=use_kl, use_adversarial=use_adversarial, sample_rate=sample_rate, additional_metrics= additional_metrics, gan_loss = gan_loss, receptive_field=receptive_field_train, use_upsampling=use_upsampling)
         
-        test(encoder, decoder, test_loader, criterion, writer, device, n_bands, use_kl, sample_rate, receptive_field, use_upsampling)
+        test(encoder, decoder, test_loader, criterion, writer, device, n_bands, use_kl, sample_rate, receptive_field_train, use_upsampling)
 
         # Save the models
         save_dir = Path('model/checkpoints')

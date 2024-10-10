@@ -207,6 +207,8 @@ def train(encoder, decoder, discriminator, train_loader, val_loader, criterion, 
                     rf = encoder.compute_receptive_field()
                     output_decomposed = encoder(dry_audio_decomposed)
                     wet_audio_decomposed = wet_audio_decomposed[..., rf-1:]
+                    
+                print("decomp",output_decomposed.shape, wet_audio_decomposed.shape)
 
                 loss = criterion(output_decomposed, wet_audio_decomposed)
 
@@ -217,6 +219,7 @@ def train(encoder, decoder, discriminator, train_loader, val_loader, criterion, 
                 else:
                     output = output_decomposed
                     wet =  wet_audio_decomposed
+                print("output",output.shape, wet.shape)
 
                 
 
