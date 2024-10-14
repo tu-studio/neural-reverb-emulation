@@ -7,3 +7,7 @@
 - get the KL loss to converge
 - try out leaky relu/ other activations
 - Stride/padding instead of dilation 
+- try out new model/ importance of PCA
+- get PQMF working 
+- Variational part
+-
