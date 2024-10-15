@@ -39,6 +39,7 @@ dilate_conv = params["train"]["dilate_conv"]
 activation = params["train"]["activation"]
 stride = params["train"]["stride"]
 padding = params["train"]["padding"]
+use_upsampling = params["train"]["use_upsampling"]
 
 # Initialize encoder and decoder
 encoder = EncoderTCN(
@@ -74,7 +75,8 @@ decoder = DecoderTCN(
     use_latent=use_latent,
     activation=activation,
     stride=stride,
-    padding=padding
+    padding=padding,
+    use_upsampling=use_upsampling
 )
 
 # Load the model state
@@ -86,7 +88,7 @@ decoder.load_state_dict(torch.load(decoder_path, map_location='cpu'))
 encoder.eval()
 decoder.eval()
 
-input_file = 'output/input_fixed_length.wav'  
+input_file = 'acgtr_clean.wav'  
 output_dir = Path('output')
 output_dir.mkdir(exist_ok=True)
 
@@ -99,7 +101,7 @@ with AudioFile(input_file) as f:
 audio = np.mean(audio, axis=0) if audio.ndim > 1 and audio.shape[0] > 1 else audio.squeeze()
 
 # Normalize audio
-audio = normalize_audio(audio)
+# audio = normalize_audio(audio)
 
 # Convert to tensor
 audio_tensor = torch.from_numpy(audio).float().unsqueeze(0).unsqueeze(0)
@@ -135,9 +137,12 @@ def process_audio():
     z_pca_modulated = z_pca_reduced.copy()
     for i in range(z_pca_reduced.shape[1]):
         z_pca_modulated[:, i] += fader_values[i]
+    
 
     z_reconstructed_modulated = pca.inverse_transform(z_pca_modulated)
     z_reconstructed_modulated = torch.from_numpy(z_reconstructed_modulated.T).float().unsqueeze(0).to(z.device)
+
+    print(z_reconstructed_modulated)
 
     with torch.no_grad():
         output_modulated = decoder(z_reconstructed_modulated, encoder_outputs[::-1])
@@ -145,6 +150,12 @@ def process_audio():
     # Convert outputs to numpy array and write to files
     output_before = output_before.squeeze().cpu().numpy()
     output_modulated = output_modulated.squeeze().cpu().numpy()
+    print("maximum output:", max(output_modulated))
+    above = 0
+    for i in range(len(output_modulated)):
+        if output_modulated[i] > 1.0:
+            above += 1
+    print("samples above 1", above)
     sf.write(output_dir / 'output_before.wav', output_before, sample_rate)
     sf.write(output_dir / 'output_modulated.wav', output_modulated, sample_rate)
 
