@@ -197,6 +197,7 @@ def main():
         if use_kl:
             mu, logvar, encoder_outputs = encoder(x)
             z = encoder.reparameterize(mu, logvar)
+            encoder_outputs.pop()
         else:
             encoder_outputs = encoder(x)
             z = encoder_outputs.pop()

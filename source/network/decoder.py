@@ -91,9 +91,12 @@ class DecoderTCN(nn.Module):
         initial_channels = n_channels * (2 ** (n_blocks - 1))
         self.initial_channels = initial_channels
 
-        if use_latent == 'dense':
+        if use_kl:
+            conv = nn.ConvTranspose1d(latent_dim, initial_channels, 1)
+            self.conv_decode = wn(conv) if use_wn else conv
+        elif use_latent == 'dense':
             self.dense_expand = wn(nn.Linear(latent_dim, initial_channels)) if use_wn else nn.Linear(latent_dim, initial_channels)
-        elif use_kl or use_latent == 'conv':
+        elif use_latent == 'conv':
             if use_upsampling:
                 conv = nn.ConvTranspose1d(latent_dim, initial_channels, kernel_size, dilation=dilation_growth**n_blocks if dilate_conv else 1)
             else:

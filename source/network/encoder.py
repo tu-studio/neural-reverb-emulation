@@ -55,8 +55,8 @@ class EncoderTCN(torch.nn.Module):
             encoder_outputs.append(x)
         
         if self.use_kl:
-            mu = torch.tanh(self.conv_mu(x))
-            logvar = torch.nn.functional.softplus(self.conv_logvar(x))
+            mu = self.conv_mu(x)
+            logvar = self.conv_logvar(x)
             return mu, logvar, encoder_outputs
         elif self.use_latent == 'conv':
             latent = self.conv_latent(x)
