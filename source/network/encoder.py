@@ -40,8 +40,8 @@ class EncoderTCN(torch.nn.Module):
             in_ch = out_ch
 
         if use_kl:
-            self.conv_mu = wn(torch.nn.Conv1d(in_ch, latent_dim, 1)) if use_wn else torch.nn.Conv1d(in_ch, latent_dim, 1)
-            self.conv_logvar = wn(torch.nn.Conv1d(in_ch, latent_dim, 1)) if use_wn else torch.nn.Conv1d(in_ch, latent_dim, 1)
+            self.conv_mu = wn(torch.nn.Conv1d(in_ch, latent_dim, kernel_size, dilation=dilation if dilate_conv else 1)) if use_wn else torch.nn.Conv1d(in_ch, latent_dim, kernel_size, dilation=dilation if dilate_conv else 1)
+            self.conv_logvar = wn(torch.nn.Conv1d(in_ch, latent_dim, kernel_size, dilation=dilation if dilate_conv else 1)) if use_wn else torch.nn.Conv1d(in_ch, latent_dim, kernel_size, dilation=dilation if dilate_conv else 1)
         elif use_latent == 'conv':
             conv = torch.nn.Conv1d(in_ch, latent_dim, kernel_size, dilation=dilation if dilate_conv else 1)
             self.conv_latent = wn(conv) if use_wn else conv
