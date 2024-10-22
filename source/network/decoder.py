@@ -86,6 +86,7 @@ class DecoderTCN(nn.Module):
         self.use_noise = use_noise
         self.use_latent = use_latent
         self.latent_dim = latent_dim
+        self.n_blocks = n_blocks
         
 
         initial_channels = n_channels * (2 ** (n_blocks - 1))
@@ -124,6 +125,13 @@ class DecoderTCN(nn.Module):
         elif self.use_latent == 'dense':
             batch_size, latent_dim, time_steps = x.shape
             x = self.dense_expand(x).view(batch_size, time_steps, self.initial_channels).transpose(1, 2)
+
+        if self.use_skip and len(skips) > self.n_blocks is not None:
+            skip = skips.pop(0)
+            if not self.use_upsampling:
+                skip = skip[:, :, (skip.shape[-1]-x.shape[-1]):]
+            gate = self.sigmoid(self.gate(torch.cat([x, skip], dim=1)))
+            x = x + gate * skip
 
         for i, (block, skip) in enumerate(zip(self.blocks, skips)):
             x = block(x, skip)

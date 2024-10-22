@@ -193,7 +193,7 @@ def train(encoder, decoder, discriminator, train_loader, val_loader, criterion, 
                     if use_kl:
                         mu, logvar, encoder_outputs = encoder(dry_audio_decomposed)
                         z = encoder.reparameterize(mu, logvar)
-                        encoder_outputs.pop()
+                        # encoder_outputs.pop()
                         kl_div = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
                         val_epoch_kl_div += kl_div
                     else:

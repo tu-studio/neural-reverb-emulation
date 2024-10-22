@@ -60,10 +60,12 @@ class EncoderTCN(torch.nn.Module):
             return mu, logvar, encoder_outputs
         elif self.use_latent == 'conv':
             latent = self.conv_latent(x)
-            encoder_outputs[-1] = latent
+            # encoder_outputs[-1] = latent
+            encoder_outputs.append(latent)
         elif self.use_latent == 'dense':
             latent = self.dense_latent(x.flatten(0, 1))
-            encoder_outputs[-1] = latent
+            # encoder_outputs[-1] = latent
+            encoder_outputs.append(latent)
         return encoder_outputs
 
     def reparameterize(self, mu, logvar):
