@@ -3,68 +3,73 @@ import subprocess
 import os
 import math
 
-def calculate_final_input_size(input_size, n_bands, dilation_growth, n_blocks, kernel_size, dilate_conv, dense=False):
-    output_length = input_size
-    stride=1
+def calculate_receptive_field(n_blocks, kernel_size, dilation_growth, input_length, n_bands, dilate_conv=True):
     if n_bands > 1:
-        padded_input_size = 2 ** math.ceil(math.log2(input_size))
+        padded_input_size = 2 ** math.ceil(math.log2(input_length))
     else:
-        padded_input_size = input_size
-
+        padded_input_size = input_length
+        
     output_length = padded_input_size // n_bands
+    padding = 0
+    stride = 1
     
-    for _ in range(n_blocks):
-        dilation = dilation_growth ** (_ + 1)
-        # padding = (kernel_size - 1) * dilation  // 2
-        padding = 0
+    for i in range(n_blocks):
+        dilation = dilation_growth ** (i + 1)
         output_length = (output_length + 2 * padding - dilation * (kernel_size - 1) - 1) // stride + 1
+        if output_length <= 0:
+            return float('inf')  # Invalid configuration
 
-    if not dense:
-        # Final convolutional layer (conv_latent)
-        final_dilation = dilation_growth ** n_blocks
-        final_kernel_size = kernel_size
-        final_padding = 0
-        final_stride = 1
-        if dilate_conv:
-            output_length = ((output_length + 2 * final_padding - final_dilation * (final_kernel_size - 1) - 1) // final_stride) + 1
-        else:
-            output_length = ((output_length + 2 * final_padding - (final_kernel_size - 1) - 1) // final_stride) + 1
-    
-    
-    
-    return output_length
+    # Final convolutional layer
+    final_dilation = dilation_growth ** n_blocks if dilate_conv else 1
+    output_length = ((output_length + 2 * padding - final_dilation * (kernel_size - 1) - 1) // stride) + 1
 
-def find_optimal_params(input_size, n_bands, n_blocks, dilate_conv=False, dense=False):
-    max_kernel_size = 3
-    max_dilation_growth = 1
+    if output_length <= 0:
+        return float('inf')
+
+    receptive_field = padded_input_size - output_length
+    return receptive_field
+
+def find_optimal_params(input_size, n_bands):
+    best_params = None
+    best_receptive = 0
     
-    for dilation_growth in range(1, 16):
-        for kernel_size in range(3, 18):
-            final_size = calculate_final_input_size(input_size, n_bands, dilation_growth, n_blocks, kernel_size, dilate_conv, dense)
-            if final_size > 0:
-                max_kernel_size = kernel_size
-                max_dilation_growth = dilation_growth
-            else:
-                return max_kernel_size, max_dilation_growth
+    # Search ranges
+    n_blocks_range = range(2, 4)
+    kernel_size_range = range(3, 17, 2)  # Odd numbers for kernel size
+    dilation_growth_range = range(5, 12)
     
-    return max_kernel_size, max_dilation_growth
+    for n_blocks, kernel_size, dilation_growth in itertools.product(
+        n_blocks_range, kernel_size_range, dilation_growth_range
+    ):
+        receptive = calculate_receptive_field(
+            n_blocks, kernel_size, dilation_growth, input_size, n_bands
+        )
+        
+        # Check if receptive field is valid and maximized while being smaller than input_size
+        if receptive < input_size and receptive > best_receptive:
+            best_receptive = receptive
+            best_params = (n_blocks, kernel_size, dilation_growth)
+    
+    return best_params, best_receptive
 
 def generate_hyperparams(input_size):
-    n_bands_options = [1]
-    n_blocks_options = [4]
+    n_bands_options = [1, 2, 4, 8, 16]
     latent_dim_options = [64]
     use_skips_options = [True, False]
     use_latent_options = ['conv']
     
     configurations = []
     
-    # for n_bands, n_blocks in itertools.product(n_bands_options, n_blocks_options):
-    #     kernel_size, dilation_growth = find_optimal_params(input_size, n_bands, n_blocks, True, False)
-    #     configurations.append((n_bands, kernel_size, n_blocks, dilation_growth))
-
-    configurations.append((1,16,4,8))
+    # Find optimal parameters for each number of bands
+    for n_bands in n_bands_options:
+        params, receptive = find_optimal_params(input_size, n_bands)
+        if params is not None:
+            n_blocks, kernel_size, dilation_growth = params
+            configurations.append((n_bands, kernel_size, n_blocks, dilation_growth))
+            print(f"For n_bands={n_bands}: blocks={n_blocks}, kernel={kernel_size}, "
+                  f"dilation_growth={dilation_growth}, receptive_field={receptive}")
     
-    use_kl_options = [False]
+    use_kl_options = [True]
     use_adversarial_options = [False]
     use_noise_options = [False]
     use_residual_stack_options = [True]
@@ -72,7 +77,6 @@ def generate_hyperparams(input_size):
     use_batch_norm_options = [False]
     loss_function_options = ['combined']
     activation_options = ['prelu']
-    
 
     for (n_bands, kernel_size, n_blocks, dilation_growth), latent_dim, use_kl, use_adversarial, use_skips, use_noise, use_residual_stack, use_wn, use_batch_norm, loss_function, activation, use_latent in itertools.product(
         configurations, latent_dim_options, use_kl_options, use_adversarial_options, use_skips_options, use_noise_options,
