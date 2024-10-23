@@ -88,6 +88,7 @@ class DecoderTCN(nn.Module):
         self.latent_dim = latent_dim
         self.n_blocks = n_blocks
         self.use_upsampling = use_upsampling
+        self.sigmoid = nn.Sigmoid()
         
 
         initial_channels = n_channels * (2 ** (n_blocks - 1))
