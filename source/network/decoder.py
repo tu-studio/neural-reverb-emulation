@@ -90,10 +90,13 @@ class DecoderTCN(nn.Module):
         self.use_upsampling = use_upsampling
         self.sigmoid = nn.Sigmoid()
         
+        
 
         initial_channels = n_channels * (2 ** (n_blocks - 1))
         self.initial_channels = initial_channels
 
+        gate = nn.Conv1d(initial_channels * 2, initial_channels, 1)
+        self.gate = wn(gate) if use_wn else gate
         if use_kl:
             if use_upsampling:
                 conv = nn.ConvTranspose1d(latent_dim, initial_channels, dilation=dilation_growth**n_blocks if dilate_conv else 1)
