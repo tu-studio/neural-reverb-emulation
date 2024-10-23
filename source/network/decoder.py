@@ -48,8 +48,8 @@ class DecoderTCNBlock(nn.Module):
         self.use_upsampling = use_upsampling
 
     def forward(self, x, skip=None):
-        x=self.conv(x)
         x = self.activation(x)
+        x=self.conv(x)
         if self.residual_stack:
             x = self.residual_stack(x)
         if self.use_skip and skip is not None:
