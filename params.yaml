@@ -7,11 +7,11 @@ preprocess:
   sliding_mean_length: 200
   noise_duration: 5
   num_noises: 100
-  plate_reverb_path: 'C:\Program Files\Common Files\VST3\Rev PLATE-140.vst3'
-  input_directory: 'C:\Users\maxim\Documents\TUBerlin\TCN-VAE-pipeline\data\raw'
-  dry_output_directory: 'C:\Users\maxim\Documents\TUBerlin\TCN-VAE-pipeline\data\dry'
-  short_output_directory: 'C:\Users\maxim\Documents\TUBerlin\TCN-VAE-pipeline\data\short'
-  wet_output_directory: 'C:\Users\maxim\Documents\TUBerlin\TCN-VAE-pipeline\data\wet'
+  plate_reverb_path: C:\Program Files\Common Files\VST3\Rev PLATE-140.vst3
+  input_directory: C:\Users\maxim\Documents\TUBerlin\TCN-VAE-pipeline\data\raw
+  dry_output_directory: C:\Users\maxim\Documents\TUBerlin\TCN-VAE-pipeline\data\dry
+  short_output_directory: C:\Users\maxim\Documents\TUBerlin\TCN-VAE-pipeline\data\short
+  wet_output_directory: C:\Users\maxim\Documents\TUBerlin\TCN-VAE-pipeline\data\wet
   model_batch_size: 32
 train:
   input_file: data/processed/preprocessed_data.pt
@@ -19,20 +19,20 @@ train:
   scheduler_rate: 0.1
   device_request: cuda
   n_inputs: 1
-  n_bands: 1
+  n_bands: 2
   latent_dim: 64
   epochs: 500
   batch_size: 1
-  kernel_size: 16
-  n_blocks: 4
-  dilation_growth: 8
+  kernel_size: 15
+  n_blocks: 3
+  dilation_growth: 11
   dilate_conv: true
   n_channels: 32
   stride: 1
   lr: 0.0001
-  use_kl: false
-  use_skip: true
-  use_latent: 'conv' # Options: 'dense', 'conv', "None"
+  use_kl: true
+  use_skip: false
+  use_latent: conv   # Options: 'dense', 'conv', "None"
   use_tcn: false
   use_pqmf: true
   use_adversarial: false
@@ -41,10 +41,10 @@ train:
   use_batch_norm: false
   use_residual: true
   use_upsampling: false
-  activation: 'prelu' # Options: 'prelu', 'leaky_relu'
+  activation: prelu   # Options: 'prelu', 'leaky_relu'
   padding: 71
 metrics:
-  loss_function: 'combined'  # Options: 'mse', 'spectral_distance', 'single_stft_loss', 'fft_loss', 'combined'
+  loss_function: combined    # Options: 'mse', 'spectral_distance', 'single_stft_loss', 'fft_loss', 'combined'
   additional_mse: true
   additional_spec: true
   additional_stft: true
@@ -59,4 +59,4 @@ discriminator:
   stride: 2
   padding: 1
 gan:
-  loss_type: 'hinge'  # Options: 'hinge', 'square'
+  loss_type: hinge    # Options: 'hinge', 'square'
