@@ -62,7 +62,7 @@ def generate_hyperparams(input_size):
     
     # Find optimal parameters for each number of bands
     for n_bands in n_bands_options:
-        params = (16,8,4)
+        params = (4,16,8)
         if params is not None:
             n_blocks, kernel_size, dilation_growth = params
             configurations.append((n_bands, kernel_size, n_blocks, dilation_growth))
