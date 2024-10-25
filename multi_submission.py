@@ -53,8 +53,8 @@ def find_optimal_params(input_size, n_bands):
     return best_params, best_receptive
 
 def generate_hyperparams(input_size):
-    n_bands_options = [1, 2, 4, 8, 16]
-    latent_dim_options = [64]
+    n_bands_options = [1]
+    latent_dim_options = [64,128,32]
     use_skips_options = [True, False]
     use_latent_options = ['conv']
     
@@ -62,14 +62,14 @@ def generate_hyperparams(input_size):
     
     # Find optimal parameters for each number of bands
     for n_bands in n_bands_options:
-        params, receptive = find_optimal_params(input_size, n_bands)
+        params = (16,8,4)
         if params is not None:
             n_blocks, kernel_size, dilation_growth = params
             configurations.append((n_bands, kernel_size, n_blocks, dilation_growth))
             print(f"For n_bands={n_bands}: blocks={n_blocks}, kernel={kernel_size}, "
-                  f"dilation_growth={dilation_growth}, receptive_field={receptive}")
+                  f"dilation_growth={dilation_growth}")
     
-    use_kl_options = [True]
+    use_kl_options = [True, False]
     use_adversarial_options = [False]
     use_noise_options = [False]
     use_residual_stack_options = [True]
@@ -111,7 +111,7 @@ def submit_batch_job(n_bands, kernel_size, n_blocks, dilation_growth, latent_dim
           f"loss_function={loss_function}, activation={activation}, use_latent={use_latent}")
 
 if __name__ == "__main__":
-    input_size = 508032  # From params.yaml
+    input_size =  524288 # From params.yaml
     total_configurations = 0
     for params in generate_hyperparams(input_size):
         submit_batch_job(*params)
