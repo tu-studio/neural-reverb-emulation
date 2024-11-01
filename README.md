@@ -1,8 +1,12 @@
 # Neural Reverb Emulation
 
+This repository aims at emulating the sound of a plate reverb EMT 140 using deep learning.
+
+It is fully integrated in a DVC pipeline for the hpc cluster of TU.
+
 ## Setup Guide
 
-### 1. Create a virtual environment
+### 1. Create a virtual environment and install requirements
 
 Using venv (recommended):
 ```bash
@@ -17,44 +21,23 @@ venv\Scripts\activate
 source venv/bin/activate
 ```
 
-Or using conda:
-```bash
-# Create conda environment
-conda create -n reverb-env python=3.8
-
-# Activate environment
-conda activate reverb-env
-```
-
-### 2. Install Requirements
-
 Install all dependencies:
 ```bash
 pip install -r requirements.txt
 ```
 
-### 3. Main Dependencies
-- PyTorch
-- torchaudio
-- tensorboard
-- tqdm
-- numpy
-- pyyaml
+### 2 . Running the Project
 
-### 4. GPU Support
-- CUDA-capable GPU recommended for training
-- Update `device_request` in `params.yaml` to use GPU (`cuda`) or CPU (`cpu`)
-
-### 5. Running the Project
-
-After setting up the environment and installing requirements:
-1. Update configuration in `params.yaml`
-2. Run training:
+On the hpc cluster: 
 ```bash
-python train.py
+./exp_workflow.sh
 ```
 
-For monitoring training:
+### 3 . Monitor trainings
+
+on marckh:
+
 ```bash
-tensorboard --logdir logs/tensorboard
+source venv/bin/activate
+tensorboard --logdir=~/Data/neural-reverb-emulation/logs/tensorboard  --path_prefix=/tb1 &!
 ```
