@@ -26,14 +26,23 @@ Install all dependencies:
 pip install -r requirements.txt
 ```
 
-### 2 . Running the Project
+### 2 . Repository organization
+
+All the relevant code for the model is in source/network
+
+The project runs following the dvc.yaml script.
+
+All parameters are inside params.yaml
+
+
+### 3 . Running the Project
 
 On the hpc cluster: 
 ```bash
 ./exp_workflow.sh
 ```
 
-### 3 . Monitor trainings
+### 4 . Monitor trainings
 
 on marckh:
 
