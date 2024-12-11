@@ -26,13 +26,13 @@ Install all dependencies:
 pip install -r requirements.txt
 ```
 
-### 2 . Repository organization
+## 2 . Repository organization
 
 All the relevant code for the model is in source/network
 
 The project runs following the dvc.yaml script.
 
-## Training Parameters
+### Training Parameters
 
 | Parameter | Description |
 |-----------|-------------|
@@ -122,6 +122,33 @@ On the hpc cluster:
 ```bash
 ./exp_workflow.sh
 ```
+
+Training can be initiated using the `./exp` script, with parameters configured through `params.yaml`. Training progress and results are logged to TensorBoard.
+
+## Script Descriptions
+
+### CompressionRate.py
+This script helps find optimal model configurations by:
+- Calculating receptive field sizes for different architectures
+- Performing grid search across different parameters (blocks, kernel size, dilation)
+- Finding best configurations for different numbers of frequency bands
+- Optimizing the architecture to achieve target receptive field sizes
+
+### Multi_submission.py
+This script automates large-scale model training by:
+- Generating multiple hyperparameter combinations
+- Finding optimal parameters for different frequency band configurations
+- Submitting batch jobs to a SLURM cluster with different configurations
+- Supports experimentation with various model architectures (VAE, adversarial training, skip connections, etc.)
+- Handles parameter combinations like latent dimensions, kernel sizes, number of blocks, etc.
+- Uses environment variables to pass parameters to SLURM jobs
+
+## Usage
+
+1. Configure your parameters in `params.yaml`
+2. Run CompressionRate.py to find optimal architecture configurations
+3. Use Multi_submission.py to launch multiple training jobs with different parameters
+4. Monitor training progress through TensorBoard logs
 
 ### 4 . Monitor trainings
 
