@@ -57,7 +57,11 @@ tensorboard --logdir=~/Data/neural-reverb-emulation/logs/tensorboard --path_pref
 - **Pipeline execution**: Managed by the `dvc.yaml` script
 
 
-## Training Parameters
+## Parameters
+
+Our architecture if fully modulable, and most parameters of it can be tweaked to research the best model.
+
+### Training parameters
 
 | Parameter       | Description                                       |
 |-----------------|---------------------------------------------------|
@@ -85,7 +89,7 @@ tensorboard --logdir=~/Data/neural-reverb-emulation/logs/tensorboard --path_pref
 | `padding`       | Amount of zero padding                          |
 
 
-## Metrics Parameters
+### Metrics Parameters
 
 | Parameter           | Description                                      |
 |---------------------|--------------------------------------------------|
@@ -96,7 +100,7 @@ tensorboard --logdir=~/Data/neural-reverb-emulation/logs/tensorboard --path_pref
 | `additional_fft`    | Track additional FFT loss                       |
 
 
-## Discriminator Parameters (Adversarial Training)
+### Discriminator Parameters (Adversarial Training)
 
 | Parameter     | Description                     |
 |---------------|---------------------------------|
@@ -111,7 +115,7 @@ tensorboard --logdir=~/Data/neural-reverb-emulation/logs/tensorboard --path_pref
 | `loss_type` | Adversarial loss function (`hinge`, `square`) |
 
 
-## General Parameters
+### General Parameters
 
 | Parameter      | Description                     |
 |----------------|---------------------------------|
