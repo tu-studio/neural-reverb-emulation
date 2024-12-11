@@ -2,7 +2,6 @@
 
 This repository aims to emulate the sound of a plate reverb EMT 140 using deep learning. The project is fully integrated into a DVC pipeline designed for the HPC cluster at TU.
 
----
 
 ## Setup Guide
 
@@ -28,7 +27,6 @@ Install all dependencies:
 pip install -r requirements.txt
 ```
 
----
 
 ### 2. Run the Project
 
