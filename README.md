@@ -5,6 +5,8 @@ This repository aims to emulate the sound of a plate reverb EMT 140 using deep l
 
 ## Setup Guide
 
+After cloning the repository on the cluster, follow those steps:
+
 ### 1. Create a Virtual Environment and Install Requirements
 
 **Using `venv` (recommended):**
