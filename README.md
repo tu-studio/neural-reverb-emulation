@@ -33,7 +33,7 @@ pip install -r requirements.txt
 ### 2. Run the Project
 
 
-Training is initiated through the `./exp` script, with parameters configured in `params.yaml`. Progress and results are logged to TensorBoard.
+Training is initiated through the `./exp` script, with parameters configured in `params.yaml`, and steps configured in `dvc.yaml`. Progress and results are logged to TensorBoard.
 
 **On the HPC cluster:**
 
