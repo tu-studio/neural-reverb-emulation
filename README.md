@@ -39,6 +39,15 @@ Training is initiated through the `./exp` script, with parameters configured in 
 ./exp_workflow.sh
 ```
 
+### 3. Monitoring Training
+
+To monitor progress on the HPC cluster:
+
+```bash
+source venv/bin/activate
+tensorboard --logdir=~/Data/neural-reverb-emulation/logs/tensorboard --path_prefix=/tb1 &!
+```
+
 
 ## Repository Organization
 
@@ -97,13 +106,6 @@ Training is initiated through the `./exp` script, with parameters configured in 
 | `kernel_size` | Size of convolutional kernels   |
 | `stride`      | Stride of convolutions          |
 | `padding`     | Amount of zero padding          |
-
----
-
-## GAN Parameters
-
-| Parameter   | Description                                  |
-|-------------|----------------------------------------------|
 | `loss_type` | Adversarial loss function (`hinge`, `square`) |
 
 
@@ -135,14 +137,5 @@ This script facilitates large-scale training by:
 - Supporting experiments with diverse architectures (e.g., VAE, adversarial training, skip connections)
 - Handling parameter sweeps like latent dimensions, kernel sizes, and block counts
 
----
 
-## Monitoring Training
-
-To monitor progress on the HPC cluster:
-
-```bash
-source venv/bin/activate
-tensorboard --logdir=~/Data/neural-reverb-emulation/logs/tensorboard --path_prefix=/tb1 &!
-```
 
