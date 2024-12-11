@@ -45,7 +45,6 @@ Training is initiated through the `./exp` script, with parameters configured in 
 - **Model code**: Located in `source/network`
 - **Pipeline execution**: Managed by the `dvc.yaml` script
 
----
 
 ## Training Parameters
 
@@ -116,25 +115,6 @@ Training is initiated through the `./exp` script, with parameters configured in 
 | `random_seed`  | Seed for reproducibility        |
 | `input_size`   | Size of input audio chunks      |
 
-
-## Usage
-
-### Configure Parameters
-
-Parameters can be customized in the `params.yaml` file. Example:
-
-```yaml
-train:
-  n_bands: 1
-  n_blocks: 4
-  kernel_size: 16
-  # Other training parameters
-
-metrics:
-  loss_function: 'combined'
-  additional_mse: true
-  # Other metrics settings
-```
 
 
 ## Key Scripts
