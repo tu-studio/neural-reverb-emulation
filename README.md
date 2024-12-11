@@ -30,6 +30,18 @@ pip install -r requirements.txt
 
 ---
 
+### 2. Run the Project
+
+
+Training is initiated through the `./exp` script, with parameters configured in `params.yaml`. Progress and results are logged to TensorBoard.
+
+**On the HPC cluster:**
+
+```bash
+./exp_workflow.sh
+```
+
+
 ## Repository Organization
 
 - **Model code**: Located in `source/network`
@@ -64,7 +76,6 @@ pip install -r requirements.txt
 | `activation`    | Activation function (`prelu` or `leaky_relu`)    |
 | `padding`       | Amount of zero padding                          |
 
----
 
 ## Metrics Parameters
 
@@ -76,7 +87,6 @@ pip install -r requirements.txt
 | `additional_stft`   | Track additional STFT loss                      |
 | `additional_fft`    | Track additional FFT loss                       |
 
----
 
 ## Discriminator Parameters (Adversarial Training)
 
@@ -99,7 +109,6 @@ pip install -r requirements.txt
 |-------------|----------------------------------------------|
 | `loss_type` | Adversarial loss function (`hinge`, `square`) |
 
----
 
 ## General Parameters
 
@@ -109,7 +118,6 @@ pip install -r requirements.txt
 | `random_seed`  | Seed for reproducibility        |
 | `input_size`   | Size of input audio chunks      |
 
----
 
 ## Usage
 
@@ -130,17 +138,6 @@ metrics:
   # Other metrics settings
 ```
 
-### Run the Project
-
-**On the HPC cluster:**
-
-```bash
-./exp_workflow.sh
-```
-
-Training is initiated through the `./exp` script, with parameters configured in `params.yaml`. Progress and results are logged to TensorBoard.
-
----
 
 ## Key Scripts
 
